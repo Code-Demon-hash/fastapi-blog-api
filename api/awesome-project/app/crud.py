@@ -1,3 +1,5 @@
+from fastapi import HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from .models import UserModel, Authors, Blogs
 from .schemas import UserCreate, BlogCreate, AuthorBase
@@ -11,7 +13,7 @@ def create_user(db: Session, user: UserCreate):
     return user_db
 
 def get_user(db: Session, username: str):
-    return db.query(UserModel).filter(UserModel.username == username).first()
+    return db.execute(select(UserModel).where(UserModel.username == username)).scalar_one_or_none()
 
 def create_author(db: Session, author: AuthorBase):
     author_db = Authors(name=author.name, email=author.email)
@@ -21,8 +23,10 @@ def create_author(db: Session, author: AuthorBase):
     return author_db
 
 def create_blog(db: Session, blog: BlogCreate):
-    new_blog = Blogs(title=blog.title, content=blog.content)
-    db.add(new_blog)
+    new_post = Blogs(title=blog.title,
+                     content=blog.content,
+                     author=blog.author) 
+    db.add(new_post)
     db.commit()
-    db.refresh(new_blog)
-    return new_blog
+    db.refresh(new_post)
+    return new_post

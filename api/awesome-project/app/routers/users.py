@@ -18,7 +18,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=409, detail="Username already exists")
     hashed_password = get_password_hash(user.password)
-    user_data = user.dict()
+    user_data = user.model_dump()
     user_data['hashed_password'] = hashed_password
     user_data.pop('password', None)
     new_user = create_user(db, user)
