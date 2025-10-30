@@ -1,37 +1,38 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from fastapi.security import OAuth2PasswordRequestForm
-from datetime import datetime, timedelta, timezone
-from ..schemas import UserCreate, UserResponse, UserSchema, Token
-from ..crud import create_user, get_user
+from datetime import timedelta
+from ..schemas import UserCreate, UserRead, UserSchema, Token
+from ..crud import create_user, get_user_by_username
 from ..dependencies import get_db
-from ..authentication import create_access_token, verify_password, get_password_hash, get_current_user, get_current_active_user, oauth2_scheme, SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES
+from .security.user_authentication import create_access_token, get_current_active_user, get_password_hash, authenticate_user, ACCESS_TOKEN_EXPIRE_MINUTES 
 from ..models import UserModel
 
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.post("/create_account", response_model=UserResponse)
+@router.post("/create_account", response_model=UserRead)
 def signup(user: UserCreate, db: Session = Depends(get_db)):
-    existing_user = get_user(db, user.username)
+    existing_user = get_user_by_username(db, user.username)
     if existing_user:
-        raise HTTPException(status_code=409, detail="Username already exists")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already registered")
     hashed_password = get_password_hash(user.password)
-    user_data = user.model_dump()
-    user_data['hashed_password'] = hashed_password
-    user_data.pop('password', None)
-    new_user = create_user(db, user)
-    return new_user
+    user.password = hashed_password
+    user_create = create_user(db, user)
+    return user_create
 
-
-@router.post("/login", response_model=Token)
+@router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = get_user(db, form_data.username)
+    user = authenticate_user(db, form_data.username, form_data.password)
     if not user :
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or Password"
+            detail="Incorrect username or Password",
+            headers={"WWW-Authenticate": "Bearer"}
             )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(

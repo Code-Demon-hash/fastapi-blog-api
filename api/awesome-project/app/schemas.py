@@ -1,6 +1,20 @@
-from pydantic import BaseModel, Field, EmailStr
+from typing import List, Optional
+from pydantic import BaseModel, EmailStr
 from datetime import datetime
+from .models import BlogStatus
 
+
+class AdminUserCreate(BaseModel):
+    username: str
+    password: str
+
+    class Config: 
+        orm_mode = True
+
+class AdminUserRead(BaseModel):
+    id: int
+    username: str
+    is_superuser: bool
 
 class UserSchema(BaseModel):
     username: str
@@ -8,31 +22,21 @@ class UserSchema(BaseModel):
     disabled: bool | None = None
 
     class Config: 
-        from_attrubutes = True
-        use_enum_values = True
+        orm_mode = True
 
 class UserCreate(BaseModel):
-    password: str = Field(alias="password")
     username: str
+    password: str 
 
     class Config:
-        from_attributes = True
-        use_enum_values = True
+        orm_mode = True
 
-class UserResponse(BaseModel):
+class UserRead(BaseModel):
     id: int
     username: str 
 
     class Config: 
-        from_attributes = True
-        use_enum_values = True
-
-class UserIn(BaseModel):
-    id: int
-
-    class Config: 
-        from_attributes = True
-        use_enum_values = True
+        orm_mode = True
 
 class Token(BaseModel):
     access_token: str
@@ -41,42 +45,90 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: str
 
+    class Config:
+        orm_mode = True
+
+class AuthorBase(BaseModel):
+    id: int
+    username: str
+    email_address: EmailStr
+    
+    class Config: 
+        orm_mode = True
+
+class AuthorCreate(BaseModel):
+    username: str
+    email_address: EmailStr
+    password: str
+
+    class Config: 
+        orm_mode = True
+
+class AuthorRead(BaseModel):
+    id: int
+    username: str
+    email_address: EmailStr
+
 class BlogCreate(BaseModel):
     title: str
     content: str
-    author: str
+    status: BlogStatus
 
     class Config: 
-        from_attributes = True
+        orm_mode = True
         
 class BlogPost(BlogCreate):
     id: int
+    author_id: int
     created_at: datetime
     content: str
+    status: BlogStatus
     
     class Config: 
-        from_attributes = True
+        orm_mode = True
 
 class BlogUpdate(BaseModel):
 
     class Config:
         orm_mode = True
 
-class AuthorBase(BaseModel):
-    name: str
-    email: EmailStr
+class CommentCreate(BaseModel):
+    blog_id: int
+    content: str
     
     class Config: 
-        from_attributes = True
+        orm_mode = True
 
-class AuthorCreate(BaseModel):
-    password: str
+class CommentRead(BaseModel):   
+    id: int
+    content: str
+    users: List[UserRead] = []
+    created_at: datetime
 
-    class Config: 
-        from_attributes = True
+    class Config:
+        orm_mode = True
 
-class Email(BaseModel):
-    email: EmailStr
+class BlogRead(BaseModel):
+    id: int
+    title: str
+    content: str
+    
+    class Config:
+        orm_mode = True
 
-    class Config: 
-        from_attributes = True
+class LikeCreate(BaseModel):
+    user_id: int
+    blog_id: Optional[int] = None
+    comment_id: Optional[int] = None
+
+class ReadLikes(BaseModel):
+    id: int
+    user_id: int
+    user_name: str
+    blog_id: Optional[int] = None
+    comment_id: Optional[int] = None
+
+    class Config:
+        orm_mode = True
+
+
