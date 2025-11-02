@@ -13,8 +13,8 @@ router = APIRouter(prefix="/comments", tags=["comments"])
 
 
 @router.post("/comments/")
-def create_comment_route(comment: CommentCreate, 
-                         db: Session = Depends(get_db), 
+def create_comment_route(comment: CommentCreate,
+                         db: Session = Depends(get_db),
                          current_user = Depends(get_current_active_user)):
     post = db.execute(select(Blogs).where(Blogs.id == comment.blog_id)).scalar_one_or_none()
     if not post:

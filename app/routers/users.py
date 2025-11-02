@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import select
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta
 from ..schemas import UserCreate, UserRead, UserSchema, Token
@@ -31,7 +30,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     if not user :
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or Password",
+            detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"}
             )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

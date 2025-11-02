@@ -5,18 +5,31 @@ from fastapi.security import OAuth2PasswordRequestForm
 from ..schemas import AdminUserCreate, AdminUserRead, Token
 from ..crud import create_admin, get_admin_by_name
 from ..dependencies import get_db
-from ..authentication import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from .security.admin_authentication import authenticate_admin, get_password_hash, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 
 
-admin_router = APIRouter(prefix="/dmin", tags=["admin_users"])
+
+
+admin_router = APIRouter(prefix="/admin", tags=["admins"])
+
+
 
 @admin_router.post("/", response_model=AdminUserRead)
-async def register_author(admin: AdminUserCreate, db: Session = Depends(get_db)):
-    author_create = create_admin(db, admin.username)
+async def register_admin(admin: AdminUserCreate, db: Session = Depends(get_db)):
+    existing_user = get_admin_by_name(db, admin.username)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already registered")
+    hashed_password = get_password_hash(admin.password)
+    admin.password = hashed_password
+    admin_create = create_admin(db, admin)
+    return admin_create
+
 
 @admin_router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    admin_user = get_admin_by_name(db, form_data.username)
+    admin_user = authenticate_admin(db, form_data.username, form_data.password)
     if not admin_user :
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
