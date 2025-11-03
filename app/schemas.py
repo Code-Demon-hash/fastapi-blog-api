@@ -25,7 +25,6 @@ class UserSchema(BaseModel):
     model_config = ConfigDict(extra='ignore')
 
     username: str
-    password: str
     disabled: bool | None = None
 
 

@@ -28,7 +28,7 @@ async def register_admin(admin: AdminUserCreate, db: Session = Depends(get_db)):
 
 
 @admin_router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     admin_user = authenticate_admin(db, form_data.username, form_data.password)
     if not admin_user :
         raise HTTPException(

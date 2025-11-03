@@ -29,10 +29,11 @@ def get_user_by_username(db: Session, username: str):
     return db.execute(select(UserModel).where(UserModel.username == username)).scalar_one_or_none()
 
 
-def create_author(db: Session, author: AuthorCreate):
+def create_author(db: Session, author: AuthorCreate, admin_user_id: int):
     author_db = Authors(username=author.username, 
                         email_address=author.email_address,
-                        hashed_password=author.password)
+                        hashed_password=author.password,
+                        admin_user_id=admin_user_id)
     db.add(author_db)
     db.commit()
     db.refresh(author_db)

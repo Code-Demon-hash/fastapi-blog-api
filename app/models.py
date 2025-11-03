@@ -18,6 +18,7 @@ class AdminUser(Base):
     email_address: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=True)
+    author: Mapped[List["Authors"]] = relationship(back_populates="admin_user")
 
 
 class Authors(Base):
@@ -30,6 +31,8 @@ class Authors(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+    admin_user_id: Mapped[int] = mapped_column(ForeignKey("admin_user.id"))
+    admin_user: Mapped["AdminUser"] = relationship(back_populates="author")
     blog: Mapped[List["Blogs"]] = relationship(back_populates="author")
 
 

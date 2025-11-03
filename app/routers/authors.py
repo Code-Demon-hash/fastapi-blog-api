@@ -11,7 +11,9 @@ from .security.author_authentication import create_access_token, authenticate_au
 router = APIRouter(prefix="/author", tags=["authors"])
 
 @router.post("/signup", response_model=AuthorBase)
-async def register_author(author: AuthorCreate, db: Session = Depends(get_db)):
+async def register_author(author: AuthorCreate, 
+                          admin_user_id,
+                          db: Session = Depends(get_db)):
     existing_user = get_author_by_name(db, author.username)
     if existing_user:
         raise HTTPException(
@@ -19,11 +21,11 @@ async def register_author(author: AuthorCreate, db: Session = Depends(get_db)):
             detail="Username already registered")
     hashed_password = get_password_hash(author.password)
     author.password = hashed_password
-    author_create = create_author(db, author)
+    author_create = create_author(db, author, admin_user_id)
     return author_create
 
 @router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     author = authenticate_author(db, form_data.username, form_data.password)
     if not author:
         raise HTTPException(

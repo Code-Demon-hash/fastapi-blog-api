@@ -13,7 +13,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.post("/create_account", response_model=UserRead)
-def signup(user: UserCreate, db: Session = Depends(get_db)):
+async def signup(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = get_user_by_username(db, user.username)
     if existing_user:
         raise HTTPException(
@@ -25,7 +25,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     return user_create
 
 @router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user :
         raise HTTPException(
@@ -41,7 +41,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
    
 
 @router.get("/user_id")
-def read_user(user_id: int, db: Session = Depends(get_db)):
+async def read_user(user_id: int, db: Session = Depends(get_db)):
     user_item = db.get(UserModel, user_id)
     if not user_item:
         raise HTTPException(
@@ -51,6 +51,6 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
     return user_item
 
 
-@router.get("/me")
-def read_current_user(current_user: UserSchema = Depends(get_current_active_user)):
+@router.get("/users/me", response_model=UserSchema)
+async def read_current_user(current_user: UserSchema = Depends(get_current_active_user)):
     return current_user

@@ -13,7 +13,7 @@ router = APIRouter(prefix="/comments", tags=["comments"])
 
 
 @router.post("/comments/")
-def create_comment_route(comment: CommentCreate,
+async def create_comment_route(comment: CommentCreate,
                          db: Session = Depends(get_db),
                          current_user = Depends(get_current_active_user)):
     post = db.execute(select(Blogs).where(Blogs.id == comment.blog_id)).scalar_one_or_none()
@@ -25,7 +25,7 @@ def create_comment_route(comment: CommentCreate,
 
 
 @router.get("/blogs/", response_model=CommentRead)
-def read_comment(blog_id: int, db: Session = Depends(get_db)):
+async def read_comment(blog_id: int, db: Session = Depends(get_db)):
     blog = db.execute(select(Blogs).where(Blogs.id == blog_id)).scalar_one_or_none()
     if not blog:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND,
@@ -34,7 +34,7 @@ def read_comment(blog_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/blogs/", response_model=ReadLikes)
-def get_blog_with_likes(blog_id: int, db: Session = Depends(get_db)):
+async def get_blog_with_likes(blog_id: int, db: Session = Depends(get_db)):
     blog_post = db.execute(select(Blogs).where(Blogs.id == blog_id)).scalar_one_or_none()
     if not blog_post:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND,

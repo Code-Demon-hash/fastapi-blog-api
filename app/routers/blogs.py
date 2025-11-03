@@ -35,7 +35,7 @@ async def submit_blog(blog_id: int,
     return blog_in_db
 
 @router.put("/update/{id}", response_model=BlogCreate)
-def update_blog_post(blog: BlogUpdate, id: int, db: Session = Depends(get_db)):
+async def update_blog_post(blog: BlogUpdate, id: int, db: Session = Depends(get_db)):
     post_in_db = db.execute(select(Blogs).where(Blogs.id == id)).scalar_one_or_none()
     if not post_in_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
@@ -52,7 +52,7 @@ def update_blog_post(blog: BlogUpdate, id: int, db: Session = Depends(get_db)):
     return updated_post
 
 @router.delete("/delete/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_blog_post(id: int, db: Session = Depends(get_db)):
+async def delete_blog_post(id: int, db: Session = Depends(get_db)):
     blog_post = db.execute(select(Blogs).where(Blogs.id == id)).scalar_one_or_none()
     if not blog_post:   
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
