@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from .models import AdminUser, UserModel, Authors, Blogs, Comments
-from .schemas import AdminUserCreate, UserCreate, BlogCreate, AuthorCreate, CommentCreate
+from .models import AdminUser, UserModel, Authors, Blogs, Comments, Likes
+from .schemas import AdminUserCreate, UserCreate, BlogCreate, AuthorCreate, CommentCreate, PostLike
 
 
 
@@ -57,8 +57,17 @@ def create_a_blog(db: Session, blog: BlogCreate, author_id: int):
 def create_comment(db: Session, comment: CommentCreate, user_name: str):
     new_comment = Comments(blog_id=comment.blog_id,
                            content=comment.content,
-                           users=user_name)
+                           user=user_name)
     db.add(new_comment)
     db.commit()
     db.refresh(new_comment)
     return new_comment
+
+
+def create_like_post(db: Session, like: PostLike, user_name: str):
+    like_on_post = Likes(blog_id=like.blog_id,
+                         user=user_name)
+    db.add(like_on_post)
+    db.commit()
+    db.refresh(like_on_post)
+    return like_on_post
