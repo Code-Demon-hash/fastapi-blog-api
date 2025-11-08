@@ -65,7 +65,7 @@ class Blogs(Base):
     readers: Mapped[List["UserReadsBlogs"]] = relationship(
         back_populates="blog"
     )
-    status: Mapped[BlogStatus] = mapped_column(Enum(BlogStatus), server_default="DRAFT")
+    status: Mapped[BlogStatus] = mapped_column(Enum(BlogStatus), server_default="PENDING")
 
 
 class UserReadsBlogs(Base):
