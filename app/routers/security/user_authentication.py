@@ -24,10 +24,10 @@ password_hash = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")  
 
 
-def get_password_hash(plain_password: str):
+def get_password_hash(plain_password: str) -> str:
     return password_hash.hash(plain_password)
 
-def verify_password(plain_password: str, hashed_password):
+def verify_password(plain_password: str, hashed_password) -> bool:
     return password_hash.verify(plain_password, hashed_password)
 
 def authenticate_user(db: Session, username: str, password: str):
