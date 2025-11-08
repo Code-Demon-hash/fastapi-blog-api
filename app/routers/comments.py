@@ -12,7 +12,7 @@ from .security.user_authentication import get_current_active_user
 router = APIRouter(prefix="/comments", tags=["comments"])
 
 
-@router.post("/comments/")
+@router.post("/comments/", status_code=status.HTTP_201_CREATED)
 async def create_comment_route(comment: CommentCreate,
                          db: Session = Depends(get_db),
                          current_user = Depends(get_current_active_user)):
@@ -24,19 +24,10 @@ async def create_comment_route(comment: CommentCreate,
     return comment_service
 
 
-@router.get("/blogs/", response_model=CommentRead)
-async def read_comment(blog_id: int, db: Session = Depends(get_db)):
+@router.get("/blog/{blog_id}/comment", response_model=CommentRead)
+async def read_comments_on_blog(blog_id: int, db: Session = Depends(get_db)):
     blog = db.execute(select(Blogs).where(Blogs.id == blog_id)).scalar_one_or_none()
     if not blog:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                              detail="Blog not found")
     return blog
-
-
-@router.get("/blogs/", response_model=ReadLikes)
-async def get_blog_with_likes(blog_id: int, db: Session = Depends(get_db)):
-    blog_post = db.execute(select(Blogs).where(Blogs.id == blog_id)).scalar_one_or_none()
-    if not blog_post:
-        return HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                             detail="Blog not found")
-    return blog_post
