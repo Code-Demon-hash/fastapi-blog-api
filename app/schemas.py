@@ -67,12 +67,6 @@ class AuthorCreate(BaseModel):
     password: str
 
 
-class AuthorRead(BaseModel):
-    id: int
-    username: str
-    email_address: EmailStr
-
-
 class BlogCreate(BaseModel):
     model_config = ConfigDict(extra='ignore')
 
@@ -88,7 +82,7 @@ class BlogPost(BlogCreate):
     author_id: int
     created_at: datetime
     content: str
-    status: BlogStatus
+    status: BlogStatus = BlogStatus.PUBLISHED
     
 
 class BlogUpdate(BaseModel):
@@ -96,43 +90,39 @@ class BlogUpdate(BaseModel):
 
 
 class CommentCreate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     blog_id: int
     content: str
-    model_config = ConfigDict(from_attributes=True)
+
 
 class CommentRead(BaseModel):   
     model_config = ConfigDict(extra='ignore')
 
     id: int
     content: str
-    users: List[UserRead] = []
+    user_id: int
     created_at: datetime
 
 
-class BlogRead(BaseModel):
+class UserReadBlog(BaseModel):
     model_config = ConfigDict(extra='ignore')
 
-    id: int
-    title: str
-    content: str
-    
+    creator: AuthorBase
+    blog: BlogPost
 
-class LikeCreate(BaseModel):
+
+class PostLike(BaseModel):
     model_config = ConfigDict(extra='ignore')
 
-    user_id: int
-    blog_id: Optional[int] = None
-    comment_id: Optional[int] = None
+    blog_id: int
 
 
-class ReadLikes(BaseModel):
+class ReadLikes(PostLike):
     model_config = ConfigDict(extra='ignore')
 
     id: int
     user_id: int
-    user_name: str
-    blog_id: Optional[int] = None
-    comment_id: Optional[int] = None
 
 
 class Settings(BaseSettings):
