@@ -2,16 +2,18 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import select, update
 from .security.author_authentication import get_current_author
-from ..schemas import BlogCreate, BlogPost, BlogUpdate
+from .security.admin_authentication import get_current_admin
+from .security.user_authentication import get_current_active_user
+from ..schemas import BlogCreate, BlogPost, BlogUpdate, UserReadBlog
 from ..crud import create_a_blog
 from ..dependencies import get_db
-from ..models import Blogs, Authors
+from ..models import Blogs, Authors, AdminUser, UserReadsBlogs
 
 
 router = APIRouter(prefix="/blogs", tags=["blogs"])
 
 
-@router.post("/", response_model=BlogPost)
+@router.post("/create", status_code=status.HTTP_201_CREATED)
 async def create_blog(blog: BlogCreate, 
                       current_author: Authors = Depends(get_current_author), 
                       db: Session = Depends(get_db)
@@ -20,19 +22,25 @@ async def create_blog(blog: BlogCreate,
     return new_blog
 
 
-@router.post("/{blog_id}/submit", response_model=BlogPost)
+@router.get("/", response_model=UserReadBlog)
+async def read_blog_post(read_post: UserReadsBlogs = Depends(get_current_active_user)):
+    return read_post
+
+
+@router.put("/{blog_id}/submit", response_model=BlogPost)
 async def submit_blog(blog_id: int,
-                      current_author: Authors = Depends(get_current_author),
+                      current_admin: AdminUser = Depends(get_current_admin),
                       db: Session = Depends(get_db)
 ):
     blog_in_db = db.execute(select(Blogs).where(Blogs.id == blog_id)).scalar_one_or_none()
     if not blog_in_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Blog not found")
-    blog_in_db.status = "PENDING"
+    blog_in_db.status = "PUBLISHED"
     db.commit()
     db.refresh(blog_in_db)
     return blog_in_db
+
 
 @router.put("/update/{id}", response_model=BlogCreate)
 async def update_blog_post(blog: BlogUpdate, id: int, db: Session = Depends(get_db)):
