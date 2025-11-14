@@ -21,7 +21,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 password_hash = PasswordHash.recommended()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")  
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")  
 
 
 def get_password_hash(plain_password: str) -> str:
