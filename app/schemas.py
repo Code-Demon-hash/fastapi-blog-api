@@ -78,7 +78,7 @@ class BlogCreate(BaseModel):
 class BlogPost(BlogCreate):
     model_config = ConfigDict(extra='ignore')
     
-    id: int
+    blog_id: int
     author_id: int
     created_at: datetime
     content: str
