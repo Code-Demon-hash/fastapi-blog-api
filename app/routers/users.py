@@ -24,7 +24,7 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
     user_create = create_user(db, user)
     return user_create
 
-@router.post("/login")
+@router.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user :
@@ -35,7 +35,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
             )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data={"sub": user.id}, expires_delta=access_token_expires
         )
     return Token(access_token=access_token, token_type="bearer") 
    
