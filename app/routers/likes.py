@@ -8,7 +8,7 @@ from .security.user_authentication import get_current_active_user
 from ..dependencies import get_db
 
 
-router = APIRouter(prefix="/comments", tags=["comments"])
+router = APIRouter(prefix="/likes", tags=["likes"])
 
 
 @router.post("/like", response_model=ReadLikes)
