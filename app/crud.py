@@ -42,6 +42,9 @@ def create_author(db: Session, author: AuthorCreate, admin_user_id: int):
 def get_author_by_name(db: Session, username: str):
     return db.execute(select(Authors).where(Authors.username == username)).scalar_one_or_none()
 
+def get_all(db):
+    blogs = db.query(Blogs).all()
+    return blogs
 
 def create_a_blog(db: Session, blog: BlogCreate, author_id: int):
     new_post = Blogs(title=blog.title,
