@@ -1,29 +1,39 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from ..models import Likes, Blogs
 from ..crud import create_like_post
-from ..schemas import PostLike, ReadLikes
-from .security.user_authentication import get_current_active_user
+from ..schemas import LikePost, BlogStatus
 from ..dependencies import get_db
 
 
 router = APIRouter(prefix="/likes", tags=["likes"])
 
 
-@router.post("/like", response_model=ReadLikes)
-async def like_post(like: PostLike,
-                 current_user = Depends(get_current_active_user), 
-                 db: Session = Depends(get_db)):
-    post = db.execut(select(Blogs).where(Blogs.id == like.blog_id)).scalar_one_or_none()
+@router.post("/{blog_id}", status_code=status.HTTP_201_CREATED)
+async def like_post(blog_id: int,
+                    like: LikePost, 
+                    db: Session = Depends(get_db), 
+                    direction: int = Query(..., le=1)
+):
+    post = db.execute(select(Blogs).where(Blogs.id == blog_id, Blogs.status==BlogStatus.PUBLISHED)).scalar_one_or_none()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail = "Blog not found")
-    user_like_post = create_like_post(db, like, current_user.user_name)
-    return user_like_post
-          
-
-@router.get("/likes/blog/{blog_id}", response_model=ReadLikes)
-def get_blog_with_likes(blog_id: int, db: Session = Depends(get_db)):
-    likes = db.execute(select(Likes).where(Likes.blog_id == blog_id)).scalar_one_or_none()
-    return likes
+    like_query = db.execute(select(Likes).where(Likes.id == blog_id, Likes.user_id==like.user_id))
+    found_like = like_query.scalar_one_or_none()
+    if direction == 1:
+        if found_like:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                detail="User has already liked post")
+        new_like = create_like_post(db, like, blog_id)
+        db.add(new_like)
+        db.commit()
+        return {"message": "Successfully added like"}
+    else:
+        if not found_like:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail="vote does not exist")
+        like_query.delete(synchronize_session=False)
+        db.commit()
+        return {"message": "Successfully deleted like"}
