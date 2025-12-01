@@ -1,4 +1,4 @@
-from typing import List, Optional
+from fastapi import Form
 from pydantic import BaseModel, ConfigDict, Field, EmailStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from datetime import datetime
@@ -11,6 +11,12 @@ class AdminUserCreate(BaseModel):
     username: str
     email_address: EmailStr
     password: str
+
+
+class AdminSchema(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
+    id: int
 
 
 class AdminUserRead(BaseModel):
@@ -78,11 +84,11 @@ class BlogCreate(BaseModel):
 class BlogPost(BlogCreate):
     model_config = ConfigDict(extra='ignore')
     
-    blog_id: int
+    id: int
     author_id: int
     created_at: datetime
     content: str
-    status: BlogStatus = BlogStatus.PUBLISHED
+    status: BlogStatus
     
 
 class BlogUpdate(BaseModel):
@@ -92,36 +98,38 @@ class BlogUpdate(BaseModel):
 class CommentCreate(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    blog_id: int
-    content: str
+    user_id: int
+    content: str = Form(...)
 
 
 class CommentRead(BaseModel):   
     model_config = ConfigDict(extra='ignore')
 
-    id: int
-    content: str
+    blog_id: int
     user_id: int
+    content: str
     created_at: datetime
 
 
 class UserReadBlog(BaseModel):
     model_config = ConfigDict(extra='ignore')
 
-    creator: AuthorBase
-    blog: BlogPost
-
-
-class PostLike(BaseModel):
-    model_config = ConfigDict(extra='ignore')
-
-    blog_id: int
-
-
-class ReadLikes(PostLike):
-    model_config = ConfigDict(extra='ignore')
-
     id: int
+    title: str
+    content: str
+    author: AuthorBase
+
+
+class BlogInfoSchema(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
+    title: str
+    content: str 
+
+
+class LikePost(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
     user_id: int
 
 
