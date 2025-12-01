@@ -65,7 +65,7 @@ async def get_current_author(db: Session = Depends(get_db), token: str = Depends
         token_data = TokenData(username=username)
     except InvalidTokenError:
         raise credentials_exception
-    author = get_author_by_name(db, username)
+    author = get_author_by_name(db, username=token_data.username)
     if not author:
         raise credentials_exception
     return author

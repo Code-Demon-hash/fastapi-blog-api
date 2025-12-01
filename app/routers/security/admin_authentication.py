@@ -62,7 +62,7 @@ async def get_current_admin(db: Session = Depends(get_db), token: str = Depends(
         token_data = TokenData(username=username)
     except InvalidTokenError:
         raise credentials_exception
-    user = get_admin_by_name(db, token_data.username)
+    user = get_admin_by_name(db, username=token_data.username)
     if not user:
         raise credentials_exception
     return user
