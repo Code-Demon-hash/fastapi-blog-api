@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import select, update
 from .security.author_authentication import get_current_author
 from .security.admin_authentication import get_current_admin
-from ..schemas import BlogCreate, BlogPost, BlogUpdate, UserReadBlog
-from ..crud import create_a_blog, get_all
+from ..schemas import BlogCreate, BlogPost, BlogUpdate, UserReadBlog, BlogInfoSchema
+from ..enums import BlogStatus
+from ..crud import create_a_blog, is_admin
 from ..dependencies import get_db
 from ..models import Blogs, Authors, AdminUser, UserReadsBlogs
 
@@ -13,7 +14,7 @@ from ..models import Blogs, Authors, AdminUser, UserReadsBlogs
 router = APIRouter(prefix="/blogs", tags=["blogs"])
 
 
-@router.post("/create", status_code=status.HTTP_201_CREATED)
+@router.post("/create", response_model=BlogPost)
 async def create_blog(blog: BlogCreate,
                       author_id: int,
                       db: Session = Depends(get_db)):
@@ -21,31 +22,37 @@ async def create_blog(blog: BlogCreate,
     return new_blog
 
 
-@router.get("/", response_model=UserReadBlog)
-async def read_blogs(db: Session = Depends(get_db)):
-    return get_all(db)
-    
-
-@router.get("/", response_model=List[UserReadBlog])
-async def read_blog(blog_id: int, db: Session = Depends(get_db)):
-    post = db.get(UserReadsBlogs, blog_id)
-    if not post:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Blog not found")
-    return post
-
-
-@router.put("/{blog_id}/submit", response_model=BlogPost)
-async def submit_blog(blog_id: int,
-                      db: Session = Depends(get_db)):
+@router.put("/{blog_id}/submit", status_code=status.HTTP_202_ACCEPTED)
+async def submit_blog(blog_id: int, db: Session = Depends(get_db)):
     blog_in_db = db.execute(select(Blogs).where(Blogs.id == blog_id)).scalar_one_or_none()
     if not blog_in_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Blog not found")
-    blog_in_db.status = "PUBLISHED"
+    is_admin(db, blog_in_db)
+    blog_in_db.status = BlogStatus.PUBLISHED
     db.commit()
     db.refresh(blog_in_db)
     return blog_in_db
+    
+
+@router.get("/", response_model=List[UserReadBlog])
+async def read_blogs(limit: int = 10, 
+                    skip: int = 0,
+                    search: Optional[str] = "",
+                    db: Session = Depends(get_db)
+):
+    results = db.query(Blogs).filter(Blogs.title.contains(search), 
+                                     Blogs.status==BlogStatus.PUBLISHED).limit(limit).offset(skip).all()
+    return results
+
+
+@router.get("/{id}", response_model=BlogInfoSchema)
+async def read_blog(id: int, db: Session = Depends(get_db)):
+    post = db.execute(select(Blogs).filter(Blogs.status==BlogStatus.PUBLISHED).where(Blogs.id==id)).scalar_one_or_none()
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Blog not found")
+    return post
 
 
 @router.put("/update/{id}", response_model=BlogCreate)
@@ -53,7 +60,7 @@ async def update_blog_post(blog: BlogUpdate, id: int, db: Session = Depends(get_
     post_in_db = db.execute(select(Blogs).where(Blogs.id == id)).scalar_one_or_none()
     if not post_in_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-        detail=f'Blog with id does not exist'
+        detail="Blog does not exist"
         )
     update_data = blog.model_dump(exclude_unset=True)
     if not update_data: 
