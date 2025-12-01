@@ -35,12 +35,12 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
             )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.id}, expires_delta=access_token_expires
+        data={"sub": user.username}, expires_delta=access_token_expires
         )
     return Token(access_token=access_token, token_type="bearer") 
    
 
-@router.get("/user_id")
+@router.get("/{user_id}")
 async def read_user(user_id: int, db: Session = Depends(get_db)):
     user_item = db.get(UserModel, user_id)
     if not user_item:
@@ -51,6 +51,6 @@ async def read_user(user_id: int, db: Session = Depends(get_db)):
     return user_item
 
 
-@router.get("/users/me", response_model=UserSchema)
+@router.get("/me", response_model=UserSchema)
 async def read_current_user(current_user: UserSchema = Depends(get_current_active_user)):
     return current_user
