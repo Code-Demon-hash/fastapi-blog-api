@@ -55,7 +55,7 @@ class Blogs(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     content: Mapped[str] = mapped_column(String, nullable=False) 
     title: Mapped[str] = mapped_column(String, nullable=False) 
-    published_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
     author_id: Mapped[int] = mapped_column(ForeignKey("authors.id"))
@@ -100,9 +100,9 @@ class Likes(Base):
     __tablename__ = "likes"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    comment_id: Mapped[int] = mapped_column(ForeignKey("comments.id"))
+    comment_id: Mapped[int | None] = mapped_column(ForeignKey("comments.id"))
     comment: Mapped["Comments"] = relationship(back_populates="like")
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped["UserModel"] = relationship(back_populates="like")
-    blog_id: Mapped[int] = mapped_column(ForeignKey("blogs.id"))
+    blog_id: Mapped[int | None] = mapped_column(ForeignKey("blogs.id"))
     blog: Mapped["Blogs"] = relationship(back_populates="like")
