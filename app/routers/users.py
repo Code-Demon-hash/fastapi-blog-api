@@ -9,7 +9,7 @@ from .security.user_authentication import create_access_token, get_current_activ
 from ..models import UserModel
 
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix="/user", tags=["users"])
 
 
 @router.post("/create_account", response_model=UserRead)
