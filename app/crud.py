@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from .models import AdminUser, UserModel, Authors, Blogs, Comments, Likes
+from .models import AdminUser, UserModel, Author, Blog, Comment, Like
 from .schemas import AdminUserCreate, UserCreate, BlogCreate, AuthorCreate, CommentCreate, LikePost
 
 
@@ -31,7 +31,7 @@ def get_user_by_username(db: Session, username: str):
 
 
 def create_author(db: Session, author: AuthorCreate, admin_user_id: int):
-    author_db = Authors(username=author.username, 
+    author_db = Author(username=author.username, 
                         email_address=author.email_address,
                         hashed_password=author.password,
                         admin_user_id=admin_user_id)
@@ -41,11 +41,11 @@ def create_author(db: Session, author: AuthorCreate, admin_user_id: int):
     return author_db
 
 def get_author_by_name(db: Session, username: str):
-    return db.execute(select(Authors).where(Authors.username == username)).scalar_one_or_none()
+    return db.execute(select(Author).where(Author.username == username)).scalar_one_or_none()
 
 
 def create_a_blog(db: Session, blog: BlogCreate, author_id: int):
-    new_post = Blogs(title=blog.title,
+    new_post = Blog(title=blog.title,
                      content=blog.content,
                      author_id=author_id,
                      status=blog.status) 
@@ -64,7 +64,7 @@ def is_admin(db: Session, admin: AdminUser):
 
 
 def create_comment(db: Session, blog_id: int, comment: CommentCreate):
-    new_comment = Comments(blog_id=blog_id,
+    new_comment = Comment(blog_id=blog_id,
                            user_id=comment.user_id,
                            content=comment.content)
     db.add(new_comment)
@@ -73,11 +73,11 @@ def create_comment(db: Session, blog_id: int, comment: CommentCreate):
     return new_comment
 
 def get_comment_by_blog_id(db: Session, blog_id: int):
-    return db.execute(select(Comments).where(Comments.blog_id==blog_id)).scalar_one_or_none()
+    return db.execute(select(Comment).where(Comment.blog_id==blog_id)).scalar_one_or_none()
 
 
-def create_like_post(db: Session, like: LikePost, blog_id: int):
-    like_on_post = Likes(user_id=like.user_id,
+def create_like(db: Session, like: LikePost, blog_id: int):
+    like_on_post = Like(user_id=like.user_id,
                          blog_id=blog_id)
     db.add(like_on_post)
     db.commit()
