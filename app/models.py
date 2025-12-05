@@ -18,10 +18,10 @@ class AdminUser(Base):
     email_address: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=True)
-    author: Mapped[List["Authors"]] = relationship(back_populates="admin_user")
+    author: Mapped[List["Author"]] = relationship(back_populates="admin_user")
 
 
-class Authors(Base):
+class Author(Base):
     __tablename__ = "authors"     
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -33,7 +33,7 @@ class Authors(Base):
     )
     admin_user_id: Mapped[int] = mapped_column(ForeignKey("admin_user.id"))
     admin_user: Mapped["AdminUser"] = relationship(back_populates="author")
-    blog: Mapped[List["Blogs"]] = relationship(back_populates="author")
+    blog: Mapped[List["Blog"]] = relationship(back_populates="author")
 
 
 class UserModel(Base):
@@ -42,14 +42,14 @@ class UserModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
-    like: Mapped[List["Likes"]] = relationship(back_populates="user")
-    comment: Mapped[List["Comments"]] = relationship(back_populates="user")
+    like: Mapped[List["Like"]] = relationship(back_populates="user")
+    comment: Mapped[List["Comment"]] = relationship(back_populates="user")
     reads: Mapped[List["UserReadsBlogs"]] = relationship(
         back_populates="user"
     )
 
 
-class Blogs(Base):
+class Blog(Base):
     __tablename__ = "blogs"    
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -59,9 +59,9 @@ class Blogs(Base):
         DateTime(timezone=True), server_default=func.now()
     )
     author_id: Mapped[int] = mapped_column(ForeignKey("authors.id"))
-    author: Mapped["Authors"] = relationship(back_populates="blog")
-    like: Mapped[List["Likes"]] = relationship(back_populates="blog")
-    comment: Mapped[List["Comments"]] = relationship(back_populates="blog")
+    author: Mapped["Author"] = relationship(back_populates="blog")
+    like: Mapped[List["Like"]] = relationship(back_populates="blog")
+    comment: Mapped[List["Comment"]] = relationship(back_populates="blog")
     readers: Mapped[List["UserReadsBlogs"]] = relationship(
         back_populates="blog"
     )
@@ -78,10 +78,10 @@ class UserReadsBlogs(Base):
         ForeignKey("blogs.id"), primary_key=True
     )
     user: Mapped["UserModel"] = relationship(back_populates="reads")
-    blog: Mapped["Blogs"] = relationship(back_populates="readers")
+    blog: Mapped["Blog"] = relationship(back_populates="readers")
 
 
-class Comments(Base):
+class Comment(Base):
     __tablename__ = "comments"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -89,20 +89,20 @@ class Comments(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
-    like: Mapped[List["Likes"]] = relationship(back_populates="comment")
+    like: Mapped[List["Like"]] = relationship(back_populates="comment")
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped["UserModel"] = relationship(back_populates="comment")
     blog_id: Mapped[int] = mapped_column(ForeignKey("blogs.id"))
-    blog: Mapped["Blogs"] = relationship(back_populates="comment")
+    blog: Mapped["Blog"] = relationship(back_populates="comment")
 
 
-class Likes(Base):
+class Like(Base):
     __tablename__ = "likes"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     comment_id: Mapped[int | None] = mapped_column(ForeignKey("comments.id"))
-    comment: Mapped["Comments"] = relationship(back_populates="like")
+    comment: Mapped["Comment"] = relationship(back_populates="like")
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped["UserModel"] = relationship(back_populates="like")
     blog_id: Mapped[int | None] = mapped_column(ForeignKey("blogs.id"))
-    blog: Mapped["Blogs"] = relationship(back_populates="like")
+    blog: Mapped["Blog"] = relationship(back_populates="like")
