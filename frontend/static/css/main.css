@@ -1,0 +1,231 @@
+/* main.css */
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #121212;
+    color: #1f1f1f
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.header {
+    background-color: #1f1f1f;
+    padding: 1rem 0;
+}
+
+/* Navbar styles */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.navbar-nav {
+    display: flex;
+    gap: 1rem;
+}
+
+.nav-item {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+}
+
+.nav-item:hover {
+    background-color: #333;
+}
+
+/* Hamburger menu styles */
+.navbar-toggler {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.navbar-toggler span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    margin: 4px 0;
+    background-color: #fff;
+    border-radius: 2px;
+}
+
+/* Responsive styles for smaller screens */
+@media (max-width: 768px) {
+    .navbar-nav {
+        position: absolute;
+        top: 60px;
+        right: 10px;
+        background-color: #1f1f1f;
+        flex-direction: column;
+        width: 200px;
+        display: none;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    .navbar-nav.show {
+        display: flex;
+    }
+    .navbar-toggler {
+        display: block;
+    }
+}
+
+/* Container for content sections */
+.content-section {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 1rem;
+    background-color: #1f1f1f;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+fieldset {
+    border: none;
+    padding: 0;
+    margin-bottom: 1.5rem;
+}
+
+legend {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #f0f0f0;
+}
+
+.label {
+    margin-bottom: 0.5rem;
+}
+
+input[type="text"],
+input[type="password"] {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: none;
+    background-color: #333;
+    color: #f0f0f0;
+    margin-bottom: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+
+button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.2s;
+}
+
+button.btn-outline-info {
+    background-color: transparent;
+    color: #17a2b8;
+    border: 2px solid #17a2b8;
+}
+
+button.btn-outline-info:hover {
+    background-color: #17a2b8;
+    color: #fff;
+    box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);
+}
+
+button.btn-outline-danger {
+    background-color: transparent;
+    color: #dc3545;
+    border: 2px solid #dc3545;
+}
+
+button.btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: #fff;
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+/* Curved boxes for auth buttons */
+.btn {
+    border-radius: 25px;
+}
+
+/* Toggle theme switch styles */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+    margin-left: 1rem;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+/* Heading styles for headers */
+h2 {
+    margin-top: 1rem;
+    font-size: 1.5rem;
+    color: #f0f0f0;
+}
+
+/* Media adjustments for form buttons and layout */
+@media (max-width: 768px) {
+    .content-section {
+        margin: 1rem;
+        padding: 1rem;
+    }
+}
