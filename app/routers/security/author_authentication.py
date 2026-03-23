@@ -20,6 +20,11 @@ settings = Settings()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
+max_upload_size_bytes: int = 5 * 1024 * 1024  
+
+posts_per_page: int = 10
+
+
 password_hash = PasswordHash.recommended()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")  
