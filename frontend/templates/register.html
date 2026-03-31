@@ -94,24 +94,17 @@
             });
 
             if (response.ok) {
-                document.getElementById('successMessage').textContent = 
-                'Account created successfully! Please login.';
-                showModal('successModal');
-
-                document.getElementById('successModalCloseBtn').addEventListener('click', () => {
+                alert('Account created successfully! Please login')
                     window.location.href = "{{ url_for('login') }}";
-                }, { once: true });
+
             } else {
-                const error = await response.json();
-                document.getElementById('errorMessage').textContent = getErrorMessage(error);
-                showModal('errorModal')
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Registration failed');
+                
             }
         } catch (error) {
-            document.getElementById('errorMessage').textContent = 'An error occurred. Please try again.';
-            showModal('errorModal');
+            console.error('Network error. Please check your connection and try again.', error);
         }
     });
-
-    const data = await response.json();
     </script>
 {% endblock scripts %}
