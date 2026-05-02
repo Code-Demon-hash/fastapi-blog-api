@@ -53,58 +53,65 @@
 
 { % block scripts % }
 <script type="module">
-    const registerForm = document.getElementById('registerForm');
-    const passwordInput = document.getElementById('password');
-    const confirmPasswordInput = document.getElementById('confirmPassword');
-    const passwordError = document.getElementById('passwordError');
+   import { getErrorMessage, showModal } from '/static/js/utils.js';
 
-    confirmPasswordInput.addEventListener('input', () => {
-        if (passwordInput.value !== confirmPasswordInput.value) {
-            passwordError.classList.remove('d-none');
-            confirmPasswordInput.setCustomValidity('Passwords do not match');
+   const registerForm = document.getElementById('registerForm');
+   const passwordInput = document.getElementById('password');
+   const confirmPasswordInput = document.getElementById('confirmPassword');
+   const passwordError = document.getElementById('passwordError');
+
+   confirmPasswordInput.addEventListener('input', () => {
+    if (passwordInput.value !== confirmPasswordInput.value) {
+        passwordError.classList.remove('d-none');
+        confirmPasswordInput.setCustomvalidity('Passwords do not match');
+    } else {
+        passswordError.classList.add('d-none');
+        confirmPasswordInput.setcustomValidity('');
+    }
+   });
+
+   registerForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    if (passwordInput.value !== confirmPasswordInput.value) {
+        passwordError.classList.remove('d-none');
+        return;
+    }
+
+    const formData = new FormData(registerForm);
+    const userData = {
+        username: formData.get('username'),
+        email: formData.get('email'),
+        password: formData.get('password'),
+    }; 
+
+    try {
+        const response = await fetch('api/users', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData),
+        });
+
+        if (response.ok) {
+            document.getElementById('successMessage').textContent = 
+            'Account created successfully! Please login.';
+            showModal('successModal');
+
+            document.getElementById('successMessage').addEventListener('hidden.bs.modal', () => {
+                window.location.href = '/login';
+            }, { once: true });
         } else {
-            passwordError.classList.add('d-none');
-            confirmPasswordInput.setCustomValidity('');
+            const error = await respone.json();
+            document.getElementById('errorMessage').textContent = getErrorMessage(error);
+            showModal('errorModal');
         }
-    });
-
-    registerForm.addEventListener('submit', async(event) => {
-        event.preventDefault();
-
-        if (passwordInput.value !== confirmPasswordInput.value) {
-            passwordError.classList.remove('d-none')
-            return;
-        }
-
-        const formData = new FormData(registerForm);
-        const userData = {
-            username: formData.get('username'),
-            email: formData.get('email'),
-            password: formData.get('password'),
-        };
-
-        try {
-            const response = await fetch('/api/users',{
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify(userData),
-            });
-
-            if (response.ok) {
-                alert('Account created successfully! Please login')
-                    window.location.href = "{{ url_for('login') }}";
-
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Registration failed');
-                
-            }
-        } catch (error) {
-            console.error('Network error. Please check your connection and try again.', error);
-        }
-    });
+    } catch (error) {
+        document.getElementById('errorMessage').textContent = 
+        'Network error. Please check your connection and try again.';
+        showModal('errorModal');
+    }
+});
     </script>
 {% endblock scripts %}
