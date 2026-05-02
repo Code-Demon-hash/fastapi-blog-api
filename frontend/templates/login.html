@@ -25,72 +25,41 @@
 
 {% block scripts %}
 <script type="module">
-
-   class AuthService {
-    async login(username, password) {
-        try {
-            const response = await fetch('', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ username, password })
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error);
-            }
-
-            return await response.json();
-        } catch (error) {
-            console.error('Login failed:', error.message);
-            throw error;
-        }
-    }
-
-     async refreshToken() {
-    try {
-        const response = await fetch('', {
-            method: 'POST',
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            throw new Error('Token refresh failed');
-        }
-
-        return true;
-    } catch (error) {
-        console.error('Refresh failed:', error.message);
-        return false;
-    }
-   }
-
-     async logout() {
-    await fetch('', {
-        method: 'POST',
-        credentials: 'include'
-    });
-    }
-   }
-
-const auth = new AuthService();
+import { getErrorMessage, showModal } from '/static/js/utils.js';
 
 const loginForm = document.getElementById('loginForm');
 
 loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const usernameElement = document.getElementById('username').value;
-    const passwordElement = document.getElementById('password').value;
+    const formData = new FormData(loginForm);
 
     try {
-        await auth.login(username, password);
-        alert('Login successful:');
-        window.location.href = '/';
+        const response = await fetch('/api/user/token', {
+            method: 'POST',
+            body: formData,
+        });
 
-    }  catch (error) {
-        alert('Login failed: ' + error.message);
+        if (response.ok) {
+            const data = await response.json();
+
+            localStorage.setItem('access_token', data.access_token);
+
+            document.getElementById('successMessage').textContent = 'Login successful!';
+            showModal('successModal');
+
+            document.getElementById('successMessage').addEventListener('hidden.bs.modal', () => {
+                window.location.href = '/';
+            }, { once: true });
+        } else {
+            const error = await response.json();
+            document.getElementById('errorMessage').textContent = getErrorMessage(error);
+            showModal('errorModal');
+        }
+    } catch (error) {
+        document.getElementById('errorMessage').textContent = 
+        'Network error. Please check your connection and try again.';
+        showModal('errorModal');
     }
 });
 </script>
