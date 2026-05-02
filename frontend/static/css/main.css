@@ -291,5 +291,5 @@ a.article-title:focus {
 /* Ensure modal header text stays white in both themes */
 .modal-header.bg-success .modal-title,
 .modal-header.bg-danger .modal-title {
-  color: #ffffff !important;
+  color: #ffffff !important; 
 }
