@@ -44,8 +44,16 @@
                            aria-current="page"
                            href="{{ url_for('home') }}">Home</a>
                     </div>
+                    
+                    <div id="loggedInNav" class="loggedInNav d-none">
+                        <button class="btn btn-outline-light"
+                        type="button"
+                        data-bs-toggle="modal"
+                        data-bs-toggle="#createPostModal">New Post</button>
+                        <a class="btn btn-outline-light" href="{{ url_for('account_page') }}" id="accountBtn">Account</a>
+                    </div>
 
-                    <div class="loggedOutNav">
+                    <div id="loggedOutNav">
                             <a class="btn btn-outline-light" href="{{ url_for('register') }}">Register</a>
                             <a class="btn btn-outline-light" href="{{ url_for('login') }}">Login</a>
                     </div>
@@ -137,8 +145,7 @@
                         </div>
                     </form>
                 </div>
-
-    {% block scripts %}
+            </div>
     <script>document.getElementById('year').textContent = new Date().getFullYear;</script>
      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
                 integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
@@ -168,6 +175,88 @@
 
         setTheme(localStorage.getItem('theme') || 'auto');
     </script>
+
+<script>
+    import { getCurrentUser } from '/static/js/auth.js';   
+    
+    async function updateAuthUI() {
+        const user = await getCurrentUser();
+        const loggedInNav = document.getElementById('loggedInNav');
+        const loggedOutNav = document.getElementById('loggedOutNav');
+        const accountBtn = document.getElementById('accountBtn');
+
+        if (user) {
+            loggedInNav.classList.remove('d-none');
+            loggedInNav.classList.add('d-flex');
+            loggedOutNav.classList.add('d-none');
+            accountBtn.textContent = user.username;
+        } else {
+            loggedInNav.classList.add('d-none');
+            loggedInNav.classList.remove('d-flex');
+            loggedOutNav.classList.remove('d-none');
+            accountBtn.textContent = 'Account';
+        }
+    }
+
+    updateAuthUI();
+</script>
+
+<script type="module">
+    import { getErrorMessage, hideModal, showModal } from '/static/js/utils.js';
+    import { getToken } from '/static/js/auth.js';
+
+    const createPostForm = document.getElementById('createPostForm');
+    
+    createPostForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const token = getToken();
+        if (!token) { window.location.href = '/login'; return; }
+
+        const formData = new FormData(createPostForm);
+        const postData = Object.fromEntries(formData.entries());
+
+        try {
+            const response = await fetch('/api/posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(postData)
+            });
+
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            } 
+
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById("successMessage").texteContent = 
+                `Post "${data.title}" created successfully!`;
+
+                hideModal('createPostModal');
+                showModal('successModal');
+
+                createForm.reset();
+
+                document.getElementById("successModal").addEventListener('hidden.bs.modal', () => {
+                    window.location.reload(); }, { once: true });
+            } else {
+                const error = await response.json();
+                document.getElementById("errormessage").textContent = getErrorMessage(error);
+                hideModal('createPostModal');
+                showModal('errorModal');
+            }
+        } catch (error) {
+            document.getElementById("errormessage").textContent =
+            "Network error. Please check your connection and try again.";
+            showModal('errorModal');
+        }    
+    });
+</script>
+{% block scripts %}
 {% endblock scripts %}
 </body>
 </html>
