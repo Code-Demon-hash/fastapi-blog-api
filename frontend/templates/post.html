@@ -29,38 +29,6 @@
         </div>
     </div>
 </article>
-<!-- Comments Section -->
-<section class="content-section py-3 px-4 mb-4">
-    <h3>Comments</h3>
-    {% for comment in post.comments %}
-    <div class="d-flex align-items-start gap-3 mb-3">
-        <img class="rounded-circle comment-img flex-shrink-0"
-            src="{{ comment.author.image_path }}"
-            alt="{{ comment.author.username }}'s profile picture"
-            width="48"
-            height="48"
-            loading="lazy">
-        <div class="flex-grow-1">
-            <div class="comment-metadata mb-1">
-                <a class="me-2"
-                href="{{ url_for('author', author_id=comment.author.id) }}">{{ comment.author.username }}</a>
-                <small class="text-body-secondary">{{ comment.created_at.strftime('%B %d, %Y at %H:%M') }}</small>
-            </div>
-            <p class="comment-content">{{ comment.content }}</p>
-        </div>
-    </div>
-    {% endfor %}
-
-    <form method="post" action="{{ url_for('add_comment', post_id=post.id) }}">
-        <div class="mb-3">
-            <label for="commentContent" class="form-label">Add a comment</label>  
-            <textarea class="form-control" id="commentContent" name="content" rows="3" placeholder="Write your comment here..."></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">Submit Comment</button>
-    </form>
-</section>
-{% endblock content %}
-
 
 <div class="modal-fade"
     id="editPostModal"
@@ -130,6 +98,125 @@
         </div>
     </div>
 </div>
-{ % endblock content % }
 
-{ % blockscripts % }
+{% endblock content %}
+{% block scripts %}
+
+    <script type="module">
+    import { getCurrentUser, getToken } from '/static/js/auth.js';
+    import { getErrorMessage, showModal, hideModal } from '/static/js/utils.js';
+
+        
+        const post = JSON.parse('{{ post | tojson | safe }}');
+        const postId = post.id; 
+        const postAuthorId = post.author_id;
+
+        async function checkOwnerShip() {
+            const author = await getCurrentUser();
+            if (author && author.id === postAuthorId) {
+                document.getElementById('postActions').classList.remove('d-none');
+            }
+            
+        }
+
+        const editForm = document.getElementById('editPostForm');
+        editForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const token = getToken();
+            if (!token) { window.location.href = '/login'; return; }
+            
+            const formData = newFormData(editForm);
+            const postData = Object.fromEntries(formData.entries());
+            delete postData.post_id;
+
+            try {
+                const response = await fetch(`/api/posts/${postId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(postData)
+                });
+
+                if (response.status === 401) { window.location.href = '/login'; return; }
+                if (response.status === 403) {
+                    document.getElementById('errormessage').textContent = 
+                    'You do not have permission to edit this post.';
+                    hideModal('deleteModal');
+                    showModal('errorModal');
+                    return;
+                }
+
+                if (response.ok) {
+                    document.getElementById('successMessage').textContent =
+                    'Post updated successfully!';
+                    hideModal('editModal');
+                    showModal('successModal');
+
+                    document.getElementById('successMessage').addEventListener('hidden.bs.modal', () => {
+                        window.location.reload();
+                    }, { once: true });
+                } else {
+                    const error = await response.json();
+                    document.getElementById('errorMessage').textContent = getErrorMessage(error);
+                    hideModal('editModal');
+                    showModal('errorModal');
+                }
+            } catch (error) {
+                document.getElementById('errorMessage').textContent = 
+                'Network error. Please check your connection and try again.';
+                showModal('errorModal');
+            }
+        });
+
+        const deleteButton = document.getElementById('confirmDelete');
+        deleteButton.addEventListener("click", async () => {
+            const token = getToken();
+            if (!token) { window.location.href = '/login'; return; }
+
+            try {
+                const response = await fetch(`/api/posts/${postId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401) { window.location.href = '/login'; return; }
+                if (response.status === 403) {
+                    document.getElementById('errorMessage').textContent = 
+                    'You do not have permission to delete this post.';
+                    hideModal('deleteModal');
+                    showModal('errorModal');
+                    return;
+                }
+
+                if (response.ok) {
+                    document.getElementById('successMessage').textContent =
+                    'Post deleted successfully!';
+                    hideModal('deleteModal');
+                    showModal('successModal');
+
+                    document.getElementById('successMessage').addEventListener('hidden.bs.modal', () => {
+                        window.location.href = '/';
+                    }, { once: true });
+                } else {
+                    const error = await response.json();
+                    document.getElementById('errorMessage').textContent = getErrorMessage(error);
+                    hideModal('deleteModal');
+                    showModal('errorModal');
+                }
+            } catch (error) {
+                document.getElementById('errorMessage').textContent = 
+                'Network error. Please check your connection and try again.';
+                showModal('errorModal');
+            }
+        });
+
+        checkOwnerShip();
+
+        
+    </script>
+{% endblock scripts %}
