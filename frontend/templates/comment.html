@@ -1,0 +1,240 @@
+{% extends "index.html" %}
+{% block content %}
+<div class="container">
+    <div class="all-comments-container">
+        <img class="rounded-circle article-img flex-shrink-0"
+            src="{{ current_user.image_path }}"
+            alt="{{ current_user.username }}'s profile picture"
+            width="64"
+            height="64"
+            loading="lazy">
+        <div class="input-group">
+            <input type="text" 
+            class="form-control" 
+            id="commentContent"
+            placeholder="Add a comment..." 
+            aria-describedby="submitCommentBtn">
+            <button class="btn btn-primary" id="submitCommentBtn">Send</button>
+        </div>
+    </div>
+
+    <div class="flex-grow-1">
+        <div class="comment-metadata mb-2">
+            <a class="me-2" href="{{ url_for('user', user_id=comment.user.id) }}">{{ comment.user.username }}</a>
+            <small class="text-body-secondary">{{ comment.created_at.strftime('%B %d, %Y') }}</small>
+        </div>
+        <p class="comment-content">{{ comment.content }}</p>
+    </div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module">
+    import { getErrorMessage, showModal, formDate } from '/static/js/utils.js';
+    import { getCurrentUser } from '/static/js/auth.js';
+
+    const commentInput = document.getElementById('commentContent');
+    const submitCommentBtn = document.getElementById('submitCommentBtn');
+
+    const post = JSON.parse('{{ post | tojson | safe }}');
+    const postId = post.id;
+
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+        commentInput.disabled = true;
+        submitCommentBtn.disabled = true;
+        commentInput.placeholder = "Please login to add a comment";
+        return;
+    }
+
+    submitCommentBtn.addEventListener('click', handleCommentSubmit);
+    commentInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            handleCommentSubmit();
+        }
+    });
+
+    document.addEventListener('click', async (event) => {
+        const deleteBtn = event.target.closest('.delete-comment-btn');
+        const editBtn = event.target.closest('.edit-comment-btn');
+
+        if (deleteBtn) {
+            const commentId = deleteBtn.dataset.commentId;
+            await deleteComment(commentId);
+        }
+
+        if (editBtn) {
+            const commentId = editBtn.dataset.commentId;
+            await editComment(commentId);
+        }
+    });
+
+    async function handleCommentSubmit() {
+        const content = commentInput.value.trim();
+
+        if (content.length < 5) {
+            document.getElementById('errorMessage').textContent = 'Comment must be at least 5 characters';
+            showModal('errorModal');
+            return;
+        }
+
+        if (content.length > 500) {
+            document.getElementById('errorMessage').textContent = 'Comment cannot exceed 500 characters';
+            showModal('errorModal');
+            return;
+        }
+
+        submitCommentBtn.disabled = true;
+        submitCommentBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Adding...';
+
+        try {
+            const response = await fetch(`/comment/${postId}`, {
+                method: 'POST', 
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    user_id: currentUser.id,
+                    content: content
+                })
+            });
+
+            if (response.status === 401) { 
+                window.location.href = '/login'; 
+                return; 
+            }
+            if (response.status === 403) {
+                document.getElementById('errorMessage').textContent = 
+                'You do not have permission to comment on this post.';
+                showModal('errorModal');
+                return;
+            }
+            if (response.ok) {
+                const newComment = await response.json();
+                document.getElementById('successMessage').textContent = 'Comment added successfully!';
+                showModal('successModal');
+                commentInput.value = '';
+                renderComment(newComment);
+            } else {
+                const error = await response.json();
+                document.getElementById('errorMessage').textContent = getErrorMessage(error);
+                showModal('errorModal');
+            }
+        } catch (error) {
+            document.getElementById('errorMessage').textContent = 
+            'Network error. Please check your connection and try again.';
+            showModal('errorModal');
+        } finally {
+            submitCommentBtn.disabled = false;
+            submitCommentBtn.innerHTML = 'Send';
+        }
+    }
+
+    function renderComment(comment) {
+        const isOwnerOrAdmin = currentUser && (currentUser.id === comment.user.id || currentUser.isAdmin);
+        const actions = isOwnerOrAdmin ? `
+            <div class="comment-actions mt-2">
+                <button class="btn btn-sm btn-primary edit-comment-btn" data-comment-id="${comment.id}">
+                    <i class="bi bi-pencil"></i> Edit
+                </button>
+                <button class="btn btn-sm btn-danger delete-comment-btn" data-comment-id="${comment.id}">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+            </div>` : '';
+        
+        return `
+            <div class="comment-wrapper" data-comment-id="${comment.id}">
+                <div class="comment-header d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <strong class="comment-author">${comment.user.username}</strong>
+                        <small class="text-muted ms-2">${formDate(comment.created_at)}</small>
+                    </div>
+                </div>
+                <p class="comment-content mb-2">${comment.content}</p>
+                ${actions}
+            </div>`;
+    }
+
+    async function loadComments() {
+        try {
+            const response = await fetch(`/comment/${postId}`, {
+                method: 'GET'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const commentsContainer = document.querySelector('.all-comments-container');
+                commentsContainer.querySelectorAll('.comment-wrapper').forEach(el => el.remove());
+                
+                if (Array.isArray(data)) {
+                    data.forEach(comment => {
+                        const html = renderComment(comment);
+                        commentsContainer.insertAdjacentHTML('afterend', html);
+                    });
+                }
+            }
+        } catch (error) {
+            document.getElementById('errorMessage').textContent = "Failed to load comments.";
+            showModal('errorModal');
+        }
+    }
+
+    async function deleteComment(commentId) {
+        if (!confirm('Delete this comment?')) return;
+        
+        try {
+            const response = await fetch(`/comment/${commentId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                document.querySelector(`[data-comment-id="${commentId}"]`).remove();
+                showModal('successModal');
+                document.getElementById('successMessage').textContent = 'Comment deleted';
+            } else {
+                const error = await response.json();
+                document.getElementById('errorMessage').textContent = getErrorMessage(error);
+                showModal('errorModal');
+            }
+        } catch (error) {
+            document.getElementById('errorMessage').textContent = 'Failed to delete comment';
+            showModal('errorModal');
+        }
+    }
+
+    async function editComment(commentId) {
+        const wrapper = document.querySelector(`[data-comment-id="${commentId}"]`);
+        const currentContent = wrapper.querySelector('.comment-content').textContent;
+        
+        const newContent = prompt('Edit comment:', currentContent);
+        if (!newContent || newContent === currentContent) return;
+
+        try {
+            const response = await fetch(`/comment/${commentId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ content: newContent })
+            });
+            
+            if (response.ok) {
+                wrapper.querySelector('.comment-content').textContent = newContent;
+                showModal('successModal');
+                document.getElementById('successMessage').textContent = 'Comment updated';
+            } else {
+                const error = await response.json();
+                document.getElementById('errorMessage').textContent = getErrorMessage(error);
+                showModal('errorModal');
+            }
+        } catch (error) {
+            document.getElementById('errorMessage').textContent = 'Failed to update comment';
+            showModal('errorModal');
+        }
+    }
+
+    loadComments();
+</script>
+{% endblock scripts %}
