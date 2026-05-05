@@ -16,7 +16,7 @@
             </div>
             <h2 class="article-title">{{ post.title }}</h2>
             <p class="article-content">{{ post.content }}</p>
-            <div id="postActions" class="post-actions mt-3">
+            <div id="postActions" class="post-actions mt-3 pt-3 border-top d-none">
                 <button type="button"
                         class="btn btn-outline-secondary me-1"
                         data-bs-toggle="modal"
@@ -30,7 +30,7 @@
     </div>
 </article>
 
-<div class="modal-fade"
+<div class="modal fade"
     id="editPostModal"
     tabindex="-1"
     aria-labelledby="editPostModalLabel"
@@ -71,7 +71,7 @@
     </div>
 </div>
 
-<div class="modal-fade"
+<div class="modal fade"
     id="deletePostModal"
     tabindex="-1"
     aria-labelledby="deletePostModalLabel"
@@ -92,7 +92,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form method="post" action="{{ url_for('delete_post', post_id=post.id) }}" style="display:inline;">
-                    <button type="submit" class="btn btn-danger">Delete</button>
+                    <button type="submit" class="btn btn-danger" id="confirmDelete">Delete</button>
                 </form>
             </div>
         </div>
@@ -103,120 +103,139 @@
 {% block scripts %}
 
     <script type="module">
-    import { getCurrentUser, getToken } from '/static/js/auth.js';
-    import { getErrorMessage, showModal, hideModal } from '/static/js/utils.js';
+    import CONFIG from '/static/js/config.js';
+    import { authManager } from '/static/js/auth.js';
+    import { getErrorMessage, showModal } from '/static/js/utils.js';
 
-        
-        const post = JSON.parse('{{ post | tojson | safe }}');
-        const postId = post.id; 
-        const postAuthorId = post.author_id;
+    const postId = "{{ post.id }}";
 
-        async function checkOwnerShip() {
-            const author = await getCurrentUser();
-            if (author && author.id === postAuthorId) {
-                document.getElementById('postActions').classList.remove('d-none');
-            }
-            
+    function updatePostActions() {
+        const isGuest = authManager.isGuest();
+        const isUser = authManager.isUser();
+        const isAuthor = authManager.isAuthor();
+        const isAdmin = authManager.isAdmin();
+        const isAuthenticated = authManager.isAuthenticated();
+
+        if (isGuest) {
+            document.getElementById('postActions').classList.add('d-none');
+            return;
+    }
+        if (isAdmin) {
+            document.getElementById('postActions').classList.remove('d-none');
+            return;
         }
 
-        const editForm = document.getElementById('editPostForm');
-        editForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
+        if (isAuthor && authManager.user.id === {{ post.author.id }}) {
+            document.getElementById('postActions').classList.remove('d-none');
+            return;
+        }
 
-            const token = getToken();
-            if (!token) { window.location.href = '/login'; return; }
-            
-            const formData = newFormData(editForm);
-            const postData = Object.fromEntries(formData.entries());
-            delete postData.post_id;
+        document.getElementById('postActions').classList.add('d-none');
+    }
 
-            try {
-                const response = await fetch(`/api/posts/${postId}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(postData)
-                });
+     async function ckeckOwnerShip() {
+        const user = await authManager.getUser();
+        const isOwner = user && user.username === "{{ post.author.username }}";
+        const isAdmin = user && user.role === CONFIG.ROLE.ADMIN;
+        if (isOwner || isAdmin) {
+            document.getElementById('postActions').classList.remove('d-none');
+        } else {
+            document.getElementById('postActions').classList.add('d-none');
+        } 
+     } 
+    
+     const editForm = document.getElementById('editPostForm');
+     editForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const token = await authManager.getToken();
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
 
-                if (response.status === 401) { window.location.href = '/login'; return; }
-                if (response.status === 403) {
-                    document.getElementById('errormessage').textContent = 
-                    'You do not have permission to edit this post.';
-                    hideModal('deleteModal');
-                    showModal('errorModal');
-                    return;
-                }
+        const formData = new FormData(editForm);
+        const postData = Object.fromEntries(formData.entries());
+        delete postData.post_id;
 
-                if (response.ok) {
-                    document.getElementById('successMessage').textContent =
-                    'Post updated successfully!';
-                    hideModal('editModal');
-                    showModal('successModal');
+        const url = `${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.BLOG_UPDATE.replace('${id}', postId)}`;
+        try {
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(postData)
+            });
 
-                    document.getElementById('successMessage').addEventListener('hidden.bs.modal', () => {
-                        window.location.reload();
-                    }, { once: true });
-                } else {
-                    const error = await response.json();
-                    document.getElementById('errorMessage').textContent = getErrorMessage(error);
-                    hideModal('editModal');
-                    showModal('errorModal');
-                }
-            } catch (error) {
-                document.getElementById('errorMessage').textContent = 
-                'Network error. Please check your connection and try again.';
+            if (response.status === 401) { window.location.href = '/login'; return; }
+            if (response.status === 403) {
+                document.getElementById('errorMessage').textContent =
+                    'You are not authorized to edit this post.';
+                hideModal('editModal');
+                showModal('errorModal');
+                return;
+            }
+
+            if (response.ok) {
+                document.getElementById('successMessage').textContent = 'Post updated successfully.';
+                hideModal('editModal');
+                showModal('successModal');
+
+                document.getElementById('successModal').addEventListener('hidden.bs.modal', () => {
+                    window.location.reload();
+                }, { once: true });
+            } else {
+                const error = await response.json();
+                document.getElementById('errorMessage').textContent = getErrorMessage(error);
                 showModal('errorModal');
             }
-        });
+        } catch (error) {
+            document.getElementById('errorMessage').textContent = 
+            'Network error. Please check your connection and try again.';
+            showModal('errorModal');
+        }
+     });
 
-        const deleteButton = document.getElementById('confirmDelete');
-        deleteButton.addEventListener("click", async () => {
-            const token = getToken();
-            if (!token) { window.location.href = '/login'; return; }
+     const deleteButton = document.getElementById('confirmDelete');
+     deleteButton.addEventListener('click', async () => {
+        const token = await authManager.getToken();
+        if (!token) {
+            window.location.href = '/login';
+            return
+        }
 
-            try {
-                const response = await fetch(`/api/posts/${postId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+        const url = `${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.BLOG_DELETE.replace('${id}', postId)}`;
+        try {
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
 
-                if (response.status === 401) { window.location.href = '/login'; return; }
-                if (response.status === 403) {
-                    document.getElementById('errorMessage').textContent = 
-                    'You do not have permission to delete this post.';
-                    hideModal('deleteModal');
-                    showModal('errorModal');
-                    return;
-                }
+            if (response.status === 401) { window.location.href = '/login'; return; }
+            if (response.status === 403) {
+                document.getElementById('errorMessage').textContent =
+                    'You are not authorized to delete this post.';
+                hideModal('editModal');
+                showModal('errorModal');
+                return;
+            }
 
-                if (response.ok) {
-                    document.getElementById('successMessage').textContent =
-                    'Post deleted successfully!';
-                    hideModal('deleteModal');
-                    showModal('successModal');
-
-                    document.getElementById('successMessage').addEventListener('hidden.bs.modal', () => {
-                        window.location.href = '/';
-                    }, { once: true });
-                } else {
-                    const error = await response.json();
-                    document.getElementById('errorMessage').textContent = getErrorMessage(error);
-                    hideModal('deleteModal');
-                    showModal('errorModal');
-                }
-            } catch (error) {
-                document.getElementById('errorMessage').textContent = 
-                'Network error. Please check your connection and try again.';
+            if (response.status === 204) {
+                window.location.href = '/';
+            } else {
+                const error = await response.json();
+                document.getElementById('errorMessage').textContent = getErrorMessage(error);
                 showModal('errorModal');
             }
-        });
+        } catch (error) {
+            document.getElementById('errorMessage').textContent = 
+            'Network error. Please check your connection and try again.';
+            showModal('errorModal');
+        }
+     });
+    
 
-        checkOwnerShip();
-
-        
     </script>
 {% endblock scripts %}
