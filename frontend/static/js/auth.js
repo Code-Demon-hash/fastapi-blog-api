@@ -1,61 +1,107 @@
-let currentUser = null;
-let fetchPromise = null;
+/**
+ * Authentication Manager
+ * Handles user authentication, token management, and role-based access
+ * @module auth
+ */
 
-export async function getCurrentUser() {
-  if (currentUser) {
-    return currentUser;
-  }
+import CONFIG from './config.js';
 
-  // Return in-progress fetch to prevent duplicate API calls
-  if (fetchPromise) {
-    return fetchPromise;
-  }
-
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    return null;
-  }
-
-  fetchPromise = (async () => {
-    try {
-      const response = await fetch("/api/users/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        currentUser = await response.json();
-        return currentUser;
-      }
-
-      localStorage.removeItem("access_token");
-      return null;
-    } catch (error) {
-      console.error("Error fetching current user:", error);
-      return null;
-    } finally {
-      fetchPromise = null;
+export class AuthenticatonManager {
+    constructor() {
+        this.token = this.getToken();
+        this.user = this.getUser();
+        this.role = this.getRole();
     }
-  })();
 
-  return fetchPromise;
+    setToken(token) {
+        this.token = token;
+        sessionStorage.setItem(CONFIG.TOKEN_KEY, token);
+    }
+
+    getToken() {
+        return sessionStorage.getItem(CONFIG.TOKEN_KEY);
+    }
+
+    clearToken() {
+        this.token = null;
+        sessionStorage.removeItem(CONFIG.TOKEN_KEY);
+    }
+
+    setUser(user) {
+        this.user = user;
+        sessionStorage.setItem(CONFIG.USER_KEY, JSON.stringify(user));
+    }
+
+    getUser() {
+        try {
+            const user = sessionStorage.getItem(CONFIG.USER_KEY);
+            if (!user) return null;
+            return JSON.parse(user);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    setRole(role) {
+        this.role = role;
+        sessionStorage.setItem(CONFIG.ROLE_KEY, role);
+    }
+
+    getRole() {
+        return sessionStorage.getItem(CONFIG.ROLE_KEY) || CONFIG.ROLES.GUEST;
+    }
+
+    isAuthenticated() {
+        return !!this.getToken();
+    }
+
+    isGuest() {
+        return !this.isAuthenticated();
+    }
+
+    isUser() {
+        return this.getRole() === CONFIG.ROLES.USER;
+    }
+
+    isAuthor() {
+        return this.getRole() === CONFIG.ROLES.AUTHOR || this.isAdmin();
+    }
+
+    isAdmin() {
+        return this.getRole() === CONFIG.ROLES.ADMIN;
+    }
+
+    hasRole(role) {
+        const userRole = this.getRole();
+        if (role === CONFIG.ROLES.ADMIN) {
+            return userRole === CONFIG.ROLES.ADMIN;
+        }
+        if (role === CONFIG.ROLES.AUTHOR) {
+            return userRole === CONFIG.ROLES.AUTHOR || userRole === CONFIG.ROLES.ADMIN;
+        }
+        return userRole === role;
+    }
+
+    logout() {
+        this.clearToken();
+        sessionStorage.removeItem(CONFIG.USER_KEY);
+        sessionStorage.removeItem(CONFIG.ROLE_KEY);
+        this.user = null;
+        this.role = CONFIG.ROLES.GUEST;
+    }
+
+    requireAuth() {
+        if (!this.isAuthenticated()) {
+            throw new Error("Please log in to access this resource.");
+        }
+    }
+
+    requireRole(role) {
+        if (!this.hasRole(role)) {
+            throw new Error("You do not have permission to access this resource.");
+        }
+    }
 }
 
-export function logout() {
-  localStorage.removeItem("access_token");
-  currentUser = null;
-  window.location.href = "/";
-}
-
-export function getToken() {
-  return localStorage.getItem("access_token");
-}
-
-export function setToken(token) {
-  localStorage.setItem("access_token", token);
-}
-
-export function clearUserCache() {
-  currentUser = null;
-}
+export const authManager = new AuthenticatonManager();
+export default authManager;
