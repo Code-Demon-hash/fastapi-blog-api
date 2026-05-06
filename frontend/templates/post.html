@@ -48,10 +48,11 @@
             
             <form id="editPostForm">
                 <div class="modal-body">
-                    <input type="hidden" id="editPostId" name="post_id" value="{{ post.id }}">
+                    <div id="errorMessage" class="text-danger mb-3" style="display: none;"></div>
+                    <input type="hidden" id="editPostId" name="blog_id" value="{{ blog.id }}">
                     <div class="mb-3">
                         <label for="editTitle" class="form-label">Title</label>
-                        <input type="text" class="form-control" id="editTitle" name="title" value="{{ post.title }}" required>
+                        <input type="text" class="form-control" id="editTitle" name="title" value="{{ blog.title }}" required>
                     </div>
                     <div class="mb-3">
                         <label for="editContent" class="form-label">Content</label>
@@ -59,7 +60,7 @@
                                   id="editcontent"
                                   name="content"
                                   rows="5"
-                                  required>{{ post.content }}</textarea>                 
+                                  required>{{ blog.content }}</textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -91,7 +92,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form method="post" action="{{ url_for('delete_post', post_id=post.id) }}" style="display:inline;">
+                <form method="blog" action="{{ url_for('delete_blog', id=blog.id) }}" style="display:inline;"></form>
                     <button type="submit" class="btn btn-danger" id="confirmDelete">Delete</button>
                 </form>
             </div>
@@ -105,33 +106,9 @@
     <script type="module">
     import CONFIG from '/static/js/config.js';
     import { authManager } from '/static/js/auth.js';
-    import { getErrorMessage, showModal } from '/static/js/utils.js';
+    import { getErrorMessage, showModal, hideModal } from '/static/js/utils.js';
 
-    const postId = "{{ post.id }}";
-
-    function updatePostActions() {
-        const isGuest = authManager.isGuest();
-        const isUser = authManager.isUser();
-        const isAuthor = authManager.isAuthor();
-        const isAdmin = authManager.isAdmin();
-        const isAuthenticated = authManager.isAuthenticated();
-
-        if (isGuest) {
-            document.getElementById('postActions').classList.add('d-none');
-            return;
-    }
-        if (isAdmin) {
-            document.getElementById('postActions').classList.remove('d-none');
-            return;
-        }
-
-        if (isAuthor && authManager.user.id === {{ post.author.id }}) {
-            document.getElementById('postActions').classList.remove('d-none');
-            return;
-        }
-
-        document.getElementById('postActions').classList.add('d-none');
-    }
+    const blogId = "{{ blog.id }}";
 
      async function ckeckOwnerShip() {
         const user = await authManager.getUser();
@@ -157,20 +134,23 @@
         const postData = Object.fromEntries(formData.entries());
         delete postData.post_id;
 
-        const url = `${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.BLOG_UPDATE.replace('${id}', postId)}`;
         try {
-            const response = await fetch(url, {
+            const response = await fetch(`/blog/update/${blogId}`, { 
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(postData)
             });
 
-            if (response.status === 401) { window.location.href = '/login'; return; }
+            if (response.status === 401) {
+                 window.location.href = '/login'; 
+                 return;
+             }
             if (response.status === 403) {
                 document.getElementById('errorMessage').textContent =
-                    'You are not authorized to edit this post.';
+                'You do not have permission to perform this action.';
                 hideModal('editModal');
                 showModal('errorModal');
                 return;
@@ -204,9 +184,8 @@
             return
         }
 
-        const url = `${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.BLOG_DELETE.replace('${id}', postId)}`;
         try {
-            const response = await fetch(url, {
+            const response = await fetch(`/blog/delete/${blogId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -216,7 +195,7 @@
             if (response.status === 401) { window.location.href = '/login'; return; }
             if (response.status === 403) {
                 document.getElementById('errorMessage').textContent =
-                    'You are not authorized to delete this post.';
+                    'You are not authorized to perform this action.';
                 hideModal('editModal');
                 showModal('errorModal');
                 return;
@@ -235,7 +214,7 @@
             showModal('errorModal');
         }
      });
-    
 
+     ckeckOwnerShip();
     </script>
 {% endblock scripts %}
