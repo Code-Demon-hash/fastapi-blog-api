@@ -2,7 +2,7 @@
 {% block content %}
 
 <div class="content-section py-3 px-4 mb-4">
-    <h2 class="mb-4">Register</h2>
+    <h2 class="mb-4">Create Account</h2>
     <form id="registerForm">
         <div class="mb-3">
             <label for="username" class="form-label">Username</label>
@@ -31,7 +31,16 @@
                 required
                 minlength="8">
                 <div class="form-text">Password must be at least 8 characters long.</div>
+                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="password">
+                    <i class="far fa-eye-slash"></i>
+                </button>
         </div>
+        <div class="mb-3">
+            <label for="accountType" class="form-label">Account Type</label>
+            <select id="accountType" class="form-control" required>
+                 <option value="user">User (Reader)</option>
+                  <option value="author">Author (Writer)</option>
+            </select>
         <div class="mb-3">
             <label for="confirmPassword" class="form-label">Confirm Password</label>
             <input type="password"
@@ -40,78 +49,91 @@
                 name="confirmPassword"
                 required
                 minlength="8">
-            <div id="passwordError" class="text-danger d-none">Passwords do not match.</div>
+                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="confirmPassword">
+                    <i class="far fa-eye-slash"></i>
+                </button>
         </div>
-        <button type="submit" class="btn btn-primary">Register</button>
+        <button type="submit" class="btn btn-primary">Create Account</button>
     </form>
     <p class="mt-3">
         Already have an account? <a href="{{ url_for('login') }}">Login here</a>
     </p>
 </div>  
 
+<div class="modal fade" id="StatusModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div id="modalHeader" class="modal-header text-white">
+        <h5 class="modal-title" id="modalTitle">Status</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center" id="modalBody"></div>
+    </div>
+  </div>
+</div>
 {% endblock content %}  
 
 { % block scripts % }
 <script type="module">
-   import { getErrorMessage, showModal } from '/static/js/utils.js';
+   import { getErrorMessage, showModal, updateUIByRole } from '/static/js/utils.js';
+   import { authManager } from '/static/js/auth.js';
+   import { CONFIG } from '/static/js/config.js';
 
    const registerForm = document.getElementById('registerForm');
-   const passwordInput = document.getElementById('password');
-   const confirmPasswordInput = document.getElementById('confirmPassword');
-   const passwordError = document.getElementById('passwordError');
 
-   confirmPasswordInput.addEventListener('input', () => {
-    if (passwordInput.value !== confirmPasswordInput.value) {
-        passwordError.classList.remove('d-none');
-        confirmPasswordInput.setCustomvalidity('Passwords do not match');
-    } else {
-        passswordError.classList.add('d-none');
-        confirmPasswordInput.setcustomValidity('');
-    }
+   document.querySelectorAll('.toggle-password').forEach(button => {
+    button.addEventListener('click', () => {
+        const targetId = button.getAttribute('data-target');
+        const input = document.getElementById(targetId);
+        const isPassword = input.type === 'password';
+
+        input.type = isPassword ? 'text' : 'password';
+        const icon = button.querySelector('i');
+        icon.classList.toggle('fa-eye');
+        icon.classList.toggle('fa-eye-slash');
+    });
    });
-
+   
    registerForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    if (passwordInput.value !== confirmPasswordInput.value) {
-        passwordError.classList.remove('d-none');
+    const formData = new FormData(registerForm);
+    const password = formData.get('password');
+    const confirmPassword = formData.get('confirmPassword');
+    const role = document.getElementById('accountType').value;
+
+    if (password !== confirmPassword) {
+        document.getElementById('modalBody').textContent = 'Passwords do not match!';
+        document.getElementById('modalHeader').className('modal-header text-white');
+        showModal('StatusModal');
         return;
     }
 
-    const formData = new FormData(registerForm);
-    const userData = {
-        username: formData.get('username'),
-        email: formData.get('email'),
-        password: formData.get('password'),
-    }; 
-
     try {
-        const response = await fetch('api/users', {
+        const endpoint = role === 'author' ? '/author/signup' : '/user/create_account';
+
+        const respone = await fetch(`${CONFIG.API_BASE_URL}${endpoint}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(userData),
+            body: formData
         });
 
-        if (response.ok) {
-            document.getElementById('successMessage').textContent = 
+        if (respone.ok) {
+            document.getElementById('modalTitle').textContent =
             'Account created successfully! Please login.';
-            showModal('successModal');
+            showModal('StatusModal');
 
-            document.getElementById('successMessage').addEventListener('hidden.bs.modal', () => {
-                window.location.href = '/login';
-            }, { once: true });
+            window.location.href = '/login';
         } else {
-            const error = await respone.json();
-            document.getElementById('errorMessage').textContent = getErrorMessage(error);
-            showModal('errorModal');
+            const errorData = await response.json();
+            document.getElementById('modalBody').textContent = getErrorMessage(errorData);
+            document.getElementById('modalHeader').className = "modal-header bg-danger text-white";
+            showModal('StatusModal');
         }
     } catch (error) {
-        document.getElementById('errorMessage').textContent = 
+        document.getElementById('modalBody').textContent =
         'Network error. Please check your connection and try again.';
-        showModal('errorModal');
+        showModal('StatusModal');
     }
 });
-    </script>
+ </script>
 {% endblock scripts %}
