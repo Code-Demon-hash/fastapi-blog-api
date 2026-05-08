@@ -1,0 +1,173 @@
+{% extends "index.html" %}
+{% block content %}
+ <!-- Create Blog Page (Author Only) -->
+        <div id="create-blog-page" class="page-content author-only" style="display:none;">
+            <h2>Create New Blog</h2>
+            <form id="createBlogForm">
+                <div class="mb-3">
+                    <label for="blogTitle" class="form-label">Title</label>
+                    <input type="text"
+                           class="form-control"
+                           name="title"
+                           required>
+                </div>
+                <div class="mb-3">
+                    <label for="blogContent" class="form-label">Content</label>
+                    <textarea class="form-control"
+                               name="content"
+                               rows="10"
+                               required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit for Review</button>
+            </form>
+        </div>
+
+        <!-- Author Dashboard -->
+        <div id="dashboard-page" class="page-content author-only" style="display:none;">
+            <h2>Dashboard</h2>
+            <div id="dashboard-stats" class="row mb-4"></div>
+            <div id="my-blogs" class="row"></div>
+        </div>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module">
+    import { showModal, getErrorMessage, updateUIByRole } from '/static/js/utils.js';
+    import { authManager } from '/static/js/auth.js';
+    import { CONFIG } from '/static/js/config.js';
+
+    updateUIByRole();
+
+    const createBlogForm = document.getElementById('createBlogForm');
+    const myBlogs = document.getElementById('my-blogs');
+    const dashBoardStats = document.getElementById('dashboard-stats');
+
+    async function loadDashboard() {
+        try {
+            const user = authManager.getUser();
+            if (!user) return;
+
+            const response = await fetch(`${CONFIG.API_BASE_URL}/blog/`,{
+                headers: {
+                    'Authorization': `Bearer ${authManager.getToken()}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to load blogs.');
+
+            const allBlogs = await response.json();
+
+            const userBlogs = allBlogs.filter(blog => blog.author ?.username === user.username);
+
+            const totalPosts = userBlogs.length;
+            const publishedPosts = userBlogs.filter(blog => blog.status === CONFIG.BLOG_STATUS.PUBLISHED).length;
+            const totalLikes = userBlogs.reduce((sum, blog) => sum + (blog.likes || 0), 0);
+
+            dashBoardStats.innerHTML = `
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-light shadow-sm text-center p-3">
+                        <h6 class="text-muted">Total Posts</h6>
+                        <h3 class="fw-bold">${totalPosts}</h3>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-light shadow-sm text-center p-3">
+                        <h6 class="text-success">Published</h6>
+                        <h3 class="fw-bold text-success">${publishedPosts}</h3>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-light shadow-sm text-center p-3">
+                        <h6 class="text-primary">Total Likes</h6>
+                        <h3 class="fw-bold text-primary">${totalLikes}</h3>
+                    </div>
+                </div>
+            `;
+
+            if (userBlogs.length > 0) {
+                myBlogs.innerHTML = userBlogs.map(blog => `
+                    <div class="col-12 mb-2">
+                        <div class="card p-3 shadow-sm d-flex flex-row justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">${blog.title}</h6>
+                                <small class="badge ${blog.status === 'published' ? 'bg-success' : 'bg-warning'}">${blog.status}</small>
+                            </div>
+                            <span class="text-muted small"><i class="fas fa-heart text-danger"></i> ${blog.likes || 0}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                myBlogs.innerHTML = '<div class="col-12 text-center text-muted"><p>No blogs yet. Start writing!</p></div>';
+            }
+
+        } catch (error) {
+            dashBoardStats.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
+        }
+    }
+
+    if (dashBoardStats || myBlogs) {
+        loadDashboard();
+    }
+        
+    if (createBlogForm) {
+        createBlogForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            if (!authManager.isAuthor()) {
+                document.getElementById('modalTitle').textContent = '';
+                document.getElementById('modalBody').textContent = 'Only authors can create posts.';
+                document.getElementById('modalHeader').className = 'modal-header text-white bg-danger';
+                showModal('StatusModal');
+                return;
+            }
+
+            const submitBtn = createBlogForm.querySelector('button[type="submit"]');
+            if(submitBtn) submitBtn.disabled = true;
+
+            const formData = new FormData(createBlogForm);
+                const blogData = {
+                title: formData.get('title'),
+                content: formData.get('content'),
+                status: CONFIG.BLOG_STATUS.PENDING
+            };
+
+            try {
+                const response = await fetch(`${CONFIG.API_BASE_URL}/blog/create`, {
+                    method: 'POST', 
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authManager.getToken()}`
+                    },
+                    body: JSON.stringify(blogData)
+                });
+
+                if (response.ok) {
+                    document.getElementById('modalBody').textContent = "Blog submitted for review.";
+                    document.getElementById('modalHeader').className = "modal-header text-white bg-success";
+                    showModal('StatusModal');
+
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    },  1500);
+                } else {
+                    const errorData = await response.json();
+                    const errorMessage = getErrorMessage(errorData);
+
+                    document.getElementById('modalTitle').textContent = "Submission Failed";
+                    document.getElementById('modalBody').textContent = errorMessage;
+                    document.getElementById('modalHeader').className = "modal-header text-white bg-danger";
+                    showModal('StatusModal');
+                }
+            } catch (error) {
+                document.getElementById('modalTitle').textContent = ""; 
+                document.getElementById('modalBody').textContent = "Network error. Please check your connection and try again.";
+                document.getElementById('modalHeader').className = "modal-header text-white bg-danger border-0";
+                showModal('StatusModal');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                }
+            }
+        });
+    }
+</script>
