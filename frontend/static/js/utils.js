@@ -1,4 +1,4 @@
-import authManager from "./auth";
+import { authUsers } from "./auth";
 
 export function getErrorMessage(error) {
     if (typeof error.detail === "string") {
@@ -38,11 +38,11 @@ export function hideModal(modalId) {
 }
 
 export function updateUIByRole() {
-    const isGuest = authManager.isGuest();
-    const isUser = authManager.isUser();
-    const isAuthor = authManager.isAuthor();
-    const isAdmin = authManager.isAdmin();
-    const isAuthenticated = authManager.isAuthenticated
+    const isGuest = authUsers.isGuest();
+    const isUser = authUsers.isUser();
+    const isAuthor = authUsers.isAuthor
+    const isAdmin = authUsers.isAdmin();
+    const isAuthenticated = authUsers.isAuthenticated();
 
     document.querySelectorAll('.guest-only').forEach(element => element.style.display = 'none');
     document.querySelectorAll('.authenticated').forEach(element => element.style.display = 'none');
