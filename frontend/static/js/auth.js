@@ -4,7 +4,7 @@
  * @module auth
  */
 
-import CONFIG from './config.js';
+import { CONFIG } from './config.js';
 
 let currentUser = null;
 let fetchPromise = null;
@@ -50,6 +50,11 @@ export async function getCurrentUser() {
 }
 
 export const authUsers = { 
+    isAuthenticated: async () => {
+        const user = await getCurrentUser();
+        return !!user; 
+    },
+
     isAuthenticated: () => !!currentUser,
     isGuest: () => !currentUser,
     isAdmin: () => currentUser?.role === CONFIG.ROLES.ADMIN,
