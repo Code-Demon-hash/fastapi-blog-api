@@ -55,7 +55,6 @@ export const authUsers = {
         return !!user; 
     },
 
-    isAuthenticated: () => !!currentUser,
     isGuest: () => !currentUser,
     isAdmin: () => currentUser?.role === CONFIG.ROLES.ADMIN,
     isAuthor: () => currentUser?.role === CONFIG.ROLES.AUTHOR,
