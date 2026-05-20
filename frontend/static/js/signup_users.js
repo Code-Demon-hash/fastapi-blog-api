@@ -1,18 +1,19 @@
-import { CONFIG } from '/static/js/config.js';
-import { getErrorMessage, showModal } from './utils';
+import { CONFIG } from './config.js';
+import { getErrorMessage, showModal } from './utils.js';
 
 const registerForm = document.getElementById('registerForm');
 const passwordInput = document.getElementById('password');
 const confirmPasswordInput = document.getElementById('confirmPassword');
 const passwordError = document.getElementById('passwordError');
 
+if (registerForm && confirmPasswordInput && passwordInput) {
 confirmPasswordInput.addEventListener('input', () => {
     if (passwordInput.value !== confirmPasswordInput.value) {
         passwordError.classList.remove('d-none');
-        confirmPasswordInput.setCustomvalidity('Passwords do not match');
+            confirmPasswordInput.setCustomValidity('Passwords do not match');
     } else {
         passwordError.classList.add('d-none');
-        confirmPasswordInput.setCustomvalidity('');
+            confirmPasswordInput.setCustomValidity('');
     }
 });
 
@@ -45,7 +46,7 @@ registerForm.addEventListener('submit', async (e) => {
         const response = await fetch(endpoint, { 
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'text/html',
         },
         body: JSON.stringify(userData),
     });
@@ -68,4 +69,5 @@ registerForm.addEventListener('submit', async (e) => {
         return;
     }
 });
+}
    

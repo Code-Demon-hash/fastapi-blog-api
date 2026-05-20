@@ -1,12 +1,20 @@
-import { CONFIG } from '/static/js/config.js';
-import { getErrorMessage, showModal } from '/static/js/utils.js';
+import { CONFIG } from './config.js';
+import { getErrorMessage, showModal, formatDate } from './utils.js';
 import { authUsers, getCurrentUser } from './auth.js';
 
-const commentSection = document.getElementById('content-section');
+let activeBlogId = null;
+
+export async function initializeComments(blogId) {
+    activeBlogId = blogId;
+    await loadComment();
+}
 
 async function loadComment() {
+    const commentSection = document.getElementById('comments-section'); 
+    if (!commentSection || !activeBlogId) return;
+
     try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/comment/${blog_id}`);
+        const response = await fetch(`${CONFIG.API_BASE_URL}/comment/${activeBlogId}`);
 
         if (!response.ok) {
             throw new Error('Failed to fetch');
@@ -26,13 +34,13 @@ async function handleCommentCreate() {
     submitCommentBtn.disabled = true;
     submitCommentBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Adding...';
 
-    const token = await authUsers.getToken()
+    const token = sessionStorage.getItem("access_token");
     try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/comment/create/${blog_id}`, {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/comment/create/${activeBlogId}`, {
             method: 'POST', 
             headers: {
                 'Authorization': `Bearer ${token}`, 
-                'Content-Type': 'application/json'
+                'Content-Type': 'text/html'
             },
              body: JSON.stringify({
                 content: content
@@ -40,10 +48,8 @@ async function handleCommentCreate() {
         });
 
         if (response.ok) {
-            document.getElementById('successMessage').textContent = 
-            "Blog has been published!";
-            showModal('successModal');
-            loadAdminDashboard();
+            commentInput.value = '';
+            await loadComment();
         } else {
             const error = await response.json();
             document.getElementById('errorMessage').textContent = getErrorMessage(error);
@@ -61,7 +67,7 @@ async function handleCommentCreate() {
 
 function renderComment(comment, getCurrentUser) { 
         const isOwner = getCurrentUser && getCurrentUser.id === comment.user_id;
-        const isAdmin = getCurrentUser && getCurrentUser.role === CONFIG.ROLE.ADMIN;
+        const isAdmin = getCurrentUser && getCurrentUser.role === CONFIG.ROLES.ADMIN;
         const actions = (isOwner || isAdmin) ? `
             <div class="comment-actions mt-2">
                 <button class="btn btn-sm btn-primary edit-comment-btn" data-comment-id="${comment.id}">
@@ -77,7 +83,7 @@ function renderComment(comment, getCurrentUser) {
                 <div class="comment-header d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <strong class="comment-author">${comment.user.username}</strong>
-                        <small class="text-muted ms-2">${formDate(comment.created_at)}</small>
+                        <small class="text-muted ms-2">${formatDate(comment.created_at)}</small>
                     </div>
                 </div>
                 <p class="comment-content mb-2">${comment.content}</p>
@@ -85,13 +91,20 @@ function renderComment(comment, getCurrentUser) {
             </div>`;
     }
 
+document.addEventListener('DOMContentLoaded', () => {
+    const commentInput = document.getElementById('commentInput');
+    const submitCommentBtn = document.getElementById('submitCommentBtn');
+
     if (submitCommentBtn) {
          submitCommentBtn.addEventListener('click', handleCommentCreate);
+    }
+    
+    if (commentInput) {
          commentInput.addEventListener('keypress', (event) => {
              if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
-                handleCommentSubmit();
+                handleCommentCreate(); // Fixed call loop target to your creation function
              }
     });
     }
-    loadComment();
+});

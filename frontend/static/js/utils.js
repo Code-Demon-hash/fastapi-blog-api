@@ -1,4 +1,4 @@
-import { authUsers } from "./auth";
+import { authUsers } from "./auth.js";
 
 export function getErrorMessage(error) {
     if (typeof error.detail === "string") {
@@ -37,17 +37,17 @@ export function hideModal(modalId) {
     if (modal) modal.hide();
 }
 
-export function updateUIByRole() {
+export async function updateUIByRole() {
     const isGuest = authUsers.isGuest();
     const isUser = authUsers.isUser();
     const isAuthor = authUsers.isAuthor
     const isAdmin = authUsers.isAdmin();
     const isAuthenticated = authUsers.isAuthenticated();
 
-    document.querySelectorAll('.guest-only').forEach(element => element.style.display = 'none');
-    document.querySelectorAll('.authenticated').forEach(element => element.style.display = 'none');
-    document.querySelectorAll('.author-only').forEach(element => element.style.display = 'none');
-    document.querySelectorAll('.admin-only').forEach(element => element.style.display = 'none');
+    document.querySelectorAll('.guest-only').forEach(element => element.style.setProperty('display', 'none', 'important'));
+    document.querySelectorAll('.authenticated').forEach(element => element.style.setProperty('display', 'none', 'important'));
+    document.querySelectorAll('.author-only').forEach(element => element.style.setProperty('display', 'none', 'important'));
+    document.querySelectorAll('.admin-only').forEach(element => element.style.setProperty('display', 'none', 'important'));
 
     if (isGuest) {
         document.querySelectorAll('.guest-only').forEach(element => element.style.display = '');

@@ -52,7 +52,10 @@ function updateLikeIconState(isLiked) {
     }
 }
 
-document.getElementById('likeBtn').addEventListener('click', handleLikeAction);
+const likeBtnElement = document.getElementById('likeBtn');
+if (likeBtnElement) {
+    likeBtnElement.addEventListener('click', handleLikeAction);
+}
 
 async function handleLikeAction() {
     const token = getToken();
@@ -85,7 +88,7 @@ async function handleLikeAction() {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'text/html'
                 },
                 body: JSON.stringify({ is_liked: true }) 
             });

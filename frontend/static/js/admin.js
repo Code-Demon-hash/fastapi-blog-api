@@ -1,6 +1,6 @@
-import { CONFIG } from 'static/js/config.js';
-import { getToken, authUsers, getCurrentUser } from './auth';
-import { showModal, getErrorMessage, updateUIByRole } from '/static/js/utils.js';
+import { CONFIG } from './config.js';
+import { getToken, authUsers, getCurrentUser } from './auth.js';
+import { showModal, getErrorMessage, updateUIByRole } from './utils.js';
 
 updateUIByRole(); 
 
@@ -60,7 +60,7 @@ async function loadAdminDashboard() {
             const response = await fetch(`${CONFIG.API_BASE_URL}/blog/${blogId}/submit`, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'text/html',
                     'Authorization': `Bearer ${getToken()}`
                 },
                 body: JSON.stringify({ status: CONFIG.BLOG_STATUS.PUBLISHED })
@@ -83,7 +83,7 @@ async function loadAdminDashboard() {
         }
     };
 
-    if (pendingSection) {
+    if (pendingBlogs) {
         loadAdminDashboard();
     }
 

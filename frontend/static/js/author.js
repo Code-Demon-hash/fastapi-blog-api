@@ -1,6 +1,6 @@
-import { showModal, getErrorMessage, updateUIByRole } from '/static/js/utils.js';
-import { getToken, authUsers, getCurrentUser } from './auth';
-import { CONFIG } from '/static/js/config.js';
+import { showModal, getErrorMessage, updateUIByRole } from "./utils.js";
+import { getToken, authUsers, getCurrentUser } from "./auth.js";
+import { CONFIG } from "./config.js";
 
 updateUIByRole();
 
@@ -89,7 +89,7 @@ async function loadAuthorDashboard(user) {
     } 
 
     if (dashBoardStats || myBlogs) {
-        loadDashboard();
+        loadAuthorDashboard();
     }
         
     if (createBlogForm) {
@@ -110,7 +110,7 @@ async function loadAuthorDashboard(user) {
                 const response = await fetch(`${CONFIG.API_BASE_URL}/blog/create`, {
                     method: 'POST', 
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'text/html',
                         'Authorization': `Bearer ${getToken()}`
                     },
                     body: JSON.stringify(blogData)
@@ -152,7 +152,7 @@ async function loadAuthorDashboard(user) {
             const response = await fetch(`${CONFIG.API_BASE_URL}/blog/delete/${blogId}`, { 
                 method: 'DELETE',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'text/html',
                     'Authorization': `Bearer ${getToken()}`
                 }
             });

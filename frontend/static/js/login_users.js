@@ -1,5 +1,5 @@
-import { CONFIG } from '/static/js/config.js';
-import { updateUIByRole, getErrorMessage, showModal } from '/static/js/utils.js';
+import { CONFIG } from './config.js';
+import { updateUIByRole, getErrorMessage, showModal } from './utils.js';
 
 const loginForm = document.getElementById('loginForm');
 
@@ -25,7 +25,7 @@ loginForm.addEventListener('submit', async (e) => {
             const data = await response.json();
             sessionStorage.setItem('access_token', data.access_token);
 
-            updateUIByRole();
+            await updateUIByRole();
             document.getElementById('successMessage').textContent =
             'Login successful!';
             showModal('successModal');

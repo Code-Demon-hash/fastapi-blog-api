@@ -4,7 +4,7 @@
  * @module auth
  */
 
-import { CONFIG } from './config.js';
+import { CONFIG } from "./config.js";
 
 let currentUser = null;
 let fetchPromise = null;
