@@ -6,14 +6,16 @@ from ..schemas import AuthorBase, AuthorCreate, Token
 from ..crud import create_author, get_author_by_name
 from ..dependencies import get_db
 from .security.author_authentication import create_access_token, authenticate_author, get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES
+from .security.author_authentication import get_current_active_author
+
 
 
 router = APIRouter(prefix="/author", tags=["authors"])
 
+
+
 @router.post("/signup", response_model=AuthorBase)
-async def register_author(author: AuthorCreate, 
-                          admin_user_id,
-                          db: Session = Depends(get_db)):
+async def register_author(author: AuthorCreate, db: Session = Depends(get_db)):
     existing_user = get_author_by_name(db, author.username)
     if existing_user:
         raise HTTPException(
@@ -21,8 +23,9 @@ async def register_author(author: AuthorCreate,
             detail="Username already registered")
     hashed_password = get_password_hash(author.password)
     author.password = hashed_password
-    author_create = create_author(db, author, admin_user_id)
+    author_create = create_author(db, author)
     return author_create
+
 
 @router.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -35,6 +38,11 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
             )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": author.username}, expires_delta=access_token_expires
+        data={"sub": author.username, "role": "author"}, expires_delta=access_token_expires
         )
     return Token(access_token=access_token, token_type="bearer")
+
+
+@router.get("/me", response_model=AuthorBase)
+async def read_current_author(current_author: AuthorBase = Depends(get_current_active_author)):
+    return current_author
