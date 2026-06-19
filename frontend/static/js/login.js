@@ -4,6 +4,8 @@ import { initPasswordToggle } from '../actions/password-visibility-toggle.js';
 
 const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
+const loginForm = document.getElementById('loginForm');
+
 
 initPasswordToggle();
 
@@ -12,7 +14,6 @@ if (currentUser) {
     redirectByRole(currentUser.role);
 }
 
-const loginForm = document.getElementById('loginForm');
 
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
