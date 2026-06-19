@@ -30,11 +30,10 @@ def get_user_by_username(db: Session, username: str):
     return db.execute(select(UserModel).where(UserModel.username == username)).scalar_one_or_none()
 
 
-def create_author(db: Session, author: AuthorCreate, admin_user_id: int):
+def create_author(db: Session, author: AuthorCreate):
     author_db = Author(username=author.username, 
                         email_address=author.email_address,
-                        hashed_password=author.password,
-                        admin_user_id=admin_user_id)
+                        hashed_password=author.password)
     db.add(author_db)
     db.commit()
     db.refresh(author_db)
@@ -64,22 +63,51 @@ def is_admin(db: Session, admin: AdminUser):
 
 
 def create_comment(db: Session, blog_id: int, comment: CommentCreate):
-    new_comment = Comment(blog_id=blog_id,
-                           user_id=comment.user_id,
-                           content=comment.content)
+    new_comment = Comment(
+        blog_id=blog_id,
+        user_id=comment.user_id,
+        content=comment.content,
+        parent_id=getattr(comment, 'parent_id', None),
+    )
     db.add(new_comment)
     db.commit()
     db.refresh(new_comment)
     return new_comment
 
-def get_comment_by_blog_id(db: Session, blog_id: int):
-    return db.execute(select(Comment).where(Comment.blog_id==blog_id)).scalar_one_or_none()
+def get_comments_by_blog(db: Session, blog_id: int):
+    return db.execute(select(Comment).where(Comment.blog_id == blog_id).order_by(Comment.created_at)).scalars().all()
 
 
-def create_like(db: Session, like: LikePost, blog_id: int):
-    like_on_post = Like(user_id=like.user_id,
-                         blog_id=blog_id)
-    db.add(like_on_post)
+def build_comment_tree(comments: list[Comment]):
+    nodes: dict[int, dict] = {}
+    roots: list[dict] = []
+
+    for c in comments:
+        nodes[c.id] = {
+            'id': c.id,
+            'parent_id': c.parent_id,
+            'blog_id': c.blog_id,
+            'user_id': c.user_id,
+            'content': c.content,
+            'created_at': c.created_at.isoformat() if hasattr(c.created_at, 'isoformat') else c.created_at,
+            'children': []
+        }
+
+    for node in nodes.values():
+        parent_id = node['parent_id']
+        if parent_id and parent_id in nodes:
+            nodes[parent_id]['children'].append(node)
+        else:
+            roots.append(node)
+
+    return roots
+
+
+def create_like(db: Session, like: LikePost, blog_id: int | None = None, comment_id: int | None = None):
+    like_on = Like(user_id=like.user_id,
+                   blog_id=blog_id,
+                   comment_id=comment_id)
+    db.add(like_on)
     db.commit()
-    db.refresh(like_on_post)
-    return like_on_post
+    db.refresh(like_on)
+    return like_on
