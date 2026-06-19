@@ -8,17 +8,19 @@
               rel="stylesheet"
               integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
               crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" href="/static/css/main.css"> 
+    <link rel="stylesheet" type="text/css" href="/static/css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
 <body>
 
     <div class="container mt-4" id="app-container">
         <div class="content-section py-3 px-4 mb-4 card mx-auto" style="max-width: 500px;">
-            <h2 class="mb-4">Login</h2>
+            <h2 class="mb-4">Welcome Back</h2>
+            <p class="auth-sub">Login to your account to continue</p>
             <form id="loginForm">
                 <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" name="username" required>
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" required>
                 </div>
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
@@ -29,7 +31,6 @@
                     <select id="role" name="role" class="form-select" required>
                         <option value="user">User</option>
                         <option value="author">Author</option>
-                        <option value="admin">Admin</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Login</button>
@@ -37,23 +38,6 @@
             <div class="mt-3 text-center">
                 <p class="mb-2"><a href="#">Forgot your password?</a></p>
                 <p class="mb-0">Don't have an account? <a href="signup.html">Register here</a></p>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="errorModalLabel">Error</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p id="errorMessage" class="fs-5"></p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
             </div>
         </div>
     </div>
