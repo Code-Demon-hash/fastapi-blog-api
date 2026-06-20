@@ -1,14 +1,14 @@
-export const CONFIG = {
-    API_BASE_URL: 'http://localhost:8000/api?',
+export const config = {
+    API_BASE_URL: '',
+
+    BLOG_STATUS: {
+        PENDING: 'PENDING',
+        PUBLISHED: 'PUBLISHED',
+    },
 
     ROLES: {
         ADMIN: 'admin',
         AUTHOR: 'author',
         USER: 'user',
-    }, 
-    
-    BLOG_STATUS: {
-        PENDING: 'pending',
-        PUBLISHED: 'published',
     },
 }
