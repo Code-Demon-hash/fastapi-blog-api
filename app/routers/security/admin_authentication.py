@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -48,6 +47,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=ALGORITHM)
     return encoded_jwt
 
+
 async def get_current_admin(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -67,9 +67,9 @@ async def get_current_admin(db: Session = Depends(get_db), token: str = Depends(
         raise credentials_exception
     return user
 
-async def get_current_active_admin(
-    current_user: UserSchema = Depends(get_current_admin),
-):
+async def get_current_active_admin(current_user: UserSchema = Depends(get_current_admin)):
     if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Inactive user")
     return current_user
