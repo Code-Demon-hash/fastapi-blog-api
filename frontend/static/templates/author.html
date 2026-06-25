@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastAPI Blog - Author Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/static/css/main.css">
+</head>
+<body>
+    <div class="guard-loading" id="guardLoading">
+        <div class="guard-spinner"></div>
+    </div>
+    <div class="app" id="app" style="display: none;"></div>
+
+    <aside class="sidebar-brand">
+        <i class="bi bi-journal-richtext"></i>
+        <span>FastAPI Blog</span>
+        
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-view="dashboard">
+                <i data-icon="home"></i> Dashboard
+            </a>
+             <a href="#" class="nav-item" data-view="posts">
+                <i data-icon="file"></i> My Posts
+            </a>
+            <a href="#" class="nav-item" data-view="write">
+                <i data-icon="file"></i> Write Post
+            </a>
+             <a href="#" class="nav-item" data-view="analytics">
+                <i data-icon="file"></i> Analytics
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="sidebar-avater" id="sidebarAvatar">..</div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-username" id="sidebarName">Loading..</div>
+                    <div class="sidebar-user-email">Author</div>
+                </div>
+            </div>
+            <button class="sidebar-logout" id="logoutBtn">
+                <i data-icon="logout"></i> Logout
+            </button>
+        </div>
+    </aside>
+
+     <main class="main">
+        <section class="view active" id="view-dashboard">
+
+        <header class="topbar">
+            <div>
+                <h1 class="topbar-title">Welcome back, <span id="welcomeName">—</span>! 
+                    <span class="wave">👋</span></h1>
+                     <p class="topbar-sub">Here's what's happening with your blog today.</p>
+            </div>
+            <div class="topbar-actions">
+                <button class="btn-primary" data-goto="compose">
+                    <i data-icon="plus"></i> New Post
+                </button>
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-card-icon stat-card-icon--purple"><i data-icon="file"></i></div>
+                <div class="stat-card-value" id="statTotal">—</div>
+                <div class="stat-card-label">Total Posts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon stat-card-icon--green"><i data-icon="check"></i></div>
+                <div class="stat-card-value" id="statPublished">—</div>
+                <div class="stat-card-label">Published</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon stat-card-icon--amber"><i data-icon="clock"></i></div>
+                <div class="stat-card-value" id="statPending">—</div>
+                <div class="stat-card-label">Awaiting Review</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon stat-card-icon--blue"><i data-icon="thumb"></i></div>
+                <div class="stat-card-value" id="statLikes">—</div>
+                <div class="stat-card-label">Total Likes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon stat-card-icon--pink"><i data-icon="chat"></i></div>
+                <div class="stat-card-value" id="statComments">—</div>
+                <div class="stat-card-label">Total Comments</div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h2 class="panel-title">Recent Posts</h2>
+                    <a href="#" class="panel-link" data-goto="posts">View all posts <i data-icon="arrow-right"></i></a>
+                </div>
+                <div class="post-list" id="recentPostList">
+                    <div class="empty-state">Loading…</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="view" id="view-posts">
+            <header class="topbar">
+                <div>
+                    <h1 class="topbar-title">My Posts</h1>
+                    <p class="topbar-sub">Everything you've written, in one place.</p>
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn-primary" data-goto="compose">
+                        <i data-icon="plus"></i> New Post
+                    </button>
+                </div>
+            </header>
+
+            <div class="filter-row" id="filterRow">
+                <button class="filter-chip active" data-filter="all">All</button>
+                <button class="filter-chip" data-filter="published">Published</button>
+                <button class="filter-chip" data-filter="pending">Awaiting Review</button>
+            </div>
+
+            <div class="panel">
+                <div class="post-list" id="allPostList">
+                    <div class="empty-state">Loading…</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="view" id="view-compose">
+            <header class="topbar">
+                <div>
+                    <h1 class="topbar-title" id="composeHeading">Write a new post</h1>
+                    <p class="topbar-sub" id="composeSub">It will be sent to the admin for review before it's published.</p>
+                </div>
+            </header>
+
+            <div class="panel" style="max-width:760px;">
+                <form id="postForm">
+                    <input type="hidden" id="postId" value="">
+ 
+                    <div class="field">
+                        <label class="field-label">Title</label>
+                        <input type="text" id="postTitle" class="field-input" placeholder="Give your post a title…" required>
+                    </div>
+
+                    <div class="field">
+                        <label class="field-label">Content</label>
+                        <textarea id="postContent" class="field-input field-textarea" rows="12" placeholder="Write your post…" required></textarea>
+                    </div>
+ 
+                    <div id="formError" class="form-msg form-msg--error"></div>
+                    <div id="formSuccess" class="form-msg form-msg--success"></div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary" id="submitBtn">Submit for review</button>
+                        <button type="button" class="btn-ghost hidden" id="cancelEditBtn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="view" id="view-analytics">
+            <header class="topbar">
+                <div>
+                    <h1 class="topbar-title">Analytics</h1>
+                    <p class="topbar-sub">Likes and comments across your published posts.</p>
+                </div>
+            </header>
+
+            <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+                <div class="stat-card">
+                    <div class="stat-card-icon stat-card-icon--green"><i data-icon="check"></i></div>
+                    <div class="stat-card-value" id="anaPublished">—</div>
+                    <div class="stat-card-label">Published Posts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-icon stat-card-icon--blue"><i data-icon="thumb"></i></div>
+                    <div class="stat-card-value" id="anaLikes">—</div>
+                    <div class="stat-card-label">Total Likes</div>
+                </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon stat-card-icon--pink"><i data-icon="chat"></i></div>
+                        <div class="stat-card-value" id="anaComments">—</div>
+                        <div class="stat-card-label">Total Comments</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-head">
+                        <h2 class="panel-title">Likes by post</h2>
+                    </div>
+                    <div class="bar-list" id="likesBarList">
+                        <div class="empty-state">Loading…</div>
+                    </div>
+                </div>
+ 
+                <div class="panel">
+                    <div class="panel-head">
+                        <h2 class="panel-title">Comments by post</h2>
+                    </div>
+                    <div class="bar-list" id="commentsBarList">
+                        <div class="empty-state">Loading…</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="/static/js/author.js"></script>
+</body>
+</html>
