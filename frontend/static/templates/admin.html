@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastAPI Blog - Admin Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/main.css">
+</head>
+<body>
+    <div class="guard-loading" id="guardLoading">
+        <div class="guard-spinner"></div>
+    </div>
+
+    <div class="app" id="app" style="display: none;">
+
+        <aside class="sidebar-brand">
+            <span>FastAPI Blog</span>
+            <span class="sidebar-tag">Admin</span>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <i data-icon="home"></i> Dashboard
+                </a>
+                <a href="#" class="nav-item" data-view="pending">
+                    <i data-icon="clock"></i> Pending Posts
+                </a>
+                <a href="#" class="nav-item" data-view="users">
+                    <i data-icon="users"></i> Manage Users
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="sidebar-avater" id="sidebarAvatar">..</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-username" id="sidebarName">Loading..</div>
+                        <div class="sidebar-user-email">Admin</div>
+                    </div>
+                </div>
+                <button class="sidebar-logout" id="logoutBtn">
+                    <i data-icon="logout"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <main class="main">
+
+            <section class="view active" id="view-dashboard">
+
+                <header class="topbar">
+                    <div>
+                        <h1 class="topbar-title">Welcome back, <span id="welcomeName">—</span>!
+                            <span class="wave">👋</span></h1>
+                        <p class="topbar-sub">Platform overview and what needs your attention.</p>
+                    </div>
+                </header>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-icon stat-card-icon--purple"><i data-icon="users"></i></div>
+                        <div class="stat-card-value" id="statTotalUsers">—</div>
+                        <div class="stat-card-label">Total Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon stat-card-icon--amber"><i data-icon="clock"></i></div>
+                        <div class="stat-card-value" id="statPendingPosts">—</div>
+                        <div class="stat-card-label">Pending Posts</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon stat-card-icon--green"><i data-icon="check"></i></div>
+                        <div class="stat-card-value" id="statAdmins">—</div>
+                        <div class="stat-card-label">Admins</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon stat-card-icon--blue"><i data-icon="file"></i></div>
+                        <div class="stat-card-value" id="statRegularUsers">—</div>
+                        <div class="stat-card-label">Readers</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-head">
+                        <h2 class="panel-title">Awaiting Your Review</h2>
+                        <a href="#" class="panel-link" data-goto="pending">View all <i data-icon="arrow-right"></i></a>
+                    </div>
+                    <div class="pending-list" id="recentPendingList">
+                        <div class="empty-state">Loading…</div>
+                    </div>
+                </div>
+
+            </section>
+
+            <section class="view" id="view-pending">
+                <header class="topbar">
+                    <div>
+                        <h1 class="topbar-title">Pending Posts</h1>
+                        <p class="topbar-sub">Review submissions from authors before they go live.</p>
+                    </div>
+                </header>
+
+                <div class="panel">
+                    <div class="pending-list" id="allPendingList">
+                        <div class="empty-state">Loading…</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="view" id="view-users">
+                <header class="topbar">
+                    <div>
+                        <h1 class="topbar-title">Manage Users</h1>
+                        <p class="topbar-sub">Everyone with an account on the platform.</p>
+                    </div>
+                </header>
+
+                <div class="filter-row" id="roleFilterRow">
+                    <button class="filter-chip active" data-filter="all">All</button>
+                    <button class="filter-chip" data-filter="admin">Admins</button>
+                    <button class="filter-chip" data-filter="author">Authors</button>
+                    <button class="filter-chip" data-filter="user">Readers</button>
+                </div>
+
+                <div class="panel">
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Joined</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <tr><td colspan="4"><div class="empty-state">Loading…</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script type="module" src="/static/js/admin.js"></script>
+</body>
+</html>
