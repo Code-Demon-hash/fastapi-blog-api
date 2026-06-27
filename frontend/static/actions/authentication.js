@@ -1,13 +1,13 @@
-import { CONFIG } from '../js/config.js';
+import { config } from '../js/config.js';
 
-// signup routes for all users
+
 const signupEndpoint = {
    admin:  `${CONFIG.API_BASE_URL}/admin/`,
    author: `${CONFIG.API_BASE_URL}/author/signup`,
    user: `${CONFIG.API_BASE_URL}/user/create_account`
 };
 
-// login routes for all users
+
 const loginEndpoints = {
     admin: `${CONFIG.API_BASE_URL}/admin/login`,
     author: `${CONFIG.API_BASE_URL}/author/login`,
@@ -24,8 +24,19 @@ export const signup = async (user, role) => {
         body: JSON.stringify(user)
     });
 
-    const data = await response.json().catch(() => ({}));
-    return { ok: response.ok, status: response.status, data };
+    let data = {}
+
+    try {
+        data = await response.json();
+    } catch (error) {
+        console.error("Unable to parse response.");
+    }
+
+    return {
+        ok: response.ok,
+        status: response.status,
+        data,
+    };
 };
 
 export const login = async (user, role) => {
@@ -44,6 +55,59 @@ export const login = async (user, role) => {
         .then(response => response.json())
         .catch(error => console.log(error));
 };
+
+export const getCurrentAuthor = async (token) => {
+    if (!token) {
+        return null;
+    }
+
+    try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/blog/author/me`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+        
+        const author = await response.json();
+
+        return author;
+
+    } catch (error) {
+        console.error('Failed to verify author:', error);
+        return null;
+    }
+};
+
+export const getCurrentAdmin = async (token) => {
+    if (!token) {
+        return null;
+    }
+
+    try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/admin/me`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        const admin = await response.json();
+
+        return admin;
+
+    } catch (error) {
+        console.error('Failed to verify admin.', error);
+        return null;
+    }
+};
+
 
 export const setLocalStorage = (key, value) => {
     localStorage.setItem(key, JSON.stringify(value));
