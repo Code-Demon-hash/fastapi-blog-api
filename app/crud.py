@@ -1,9 +1,22 @@
 from sqlalchemy import select
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from .models import AdminUser, UserModel, Authors, Blogs, Comments
-from .schemas import AdminUserCreate, UserCreate, BlogCreate, AuthorCreate, CommentCreate
+from .models import AdminUser, UserModel, Author, Blog, Comment, Like
+from .schemas import AdminUserCreate, UserCreate, BlogCreate, AuthorCreate, CommentCreate, LikePost
 
 
+
+def create_admin(db: Session, admin: AdminUserCreate):
+    admin_db = AdminUser(username=admin.username,
+                         email_address=admin.email_address,
+                         hashed_password=admin.password)
+    db.add(admin_db)
+    db.commit()
+    db.refresh(admin_db)
+    return admin_db
+
+def get_admin_by_name(db: Session, username: str):
+    return db.execute(select(AdminUser).where(AdminUser.username == username)).scalar_one_or_none()
 
 
 def create_user(db: Session, user: UserCreate):
@@ -14,13 +27,11 @@ def create_user(db: Session, user: UserCreate):
     return user_db
 
 def get_user_by_username(db: Session, username: str):
-    user = db.execute(select(UserModel).where(UserModel.username == username)).scalar_one_or_none()
-    print(f"Retrieved user for username '{username}': {user}")
-    return user
+    return db.execute(select(UserModel).where(UserModel.username == username)).scalar_one_or_none()
 
 
 def create_author(db: Session, author: AuthorCreate):
-    author_db = Authors(username=author.username, 
+    author_db = Author(username=author.username, 
                         email_address=author.email_address,
                         hashed_password=author.password)
     db.add(author_db)
@@ -29,11 +40,11 @@ def create_author(db: Session, author: AuthorCreate):
     return author_db
 
 def get_author_by_name(db: Session, username: str):
-    return db.execute(select(Authors).where(Authors.username == username)).scalar_one_or_none()
+    return db.execute(select(Author).where(Author.username == username)).scalar_one_or_none()
 
 
 def create_a_blog(db: Session, blog: BlogCreate, author_id: int):
-    new_post = Blogs(title=blog.title,
+    new_post = Blog(title=blog.title,
                      content=blog.content,
                      author_id=author_id,
                      status=blog.status) 
@@ -42,13 +53,61 @@ def create_a_blog(db: Session, blog: BlogCreate, author_id: int):
     db.refresh(new_post)
     return new_post
 
-def create_comment(db: Session, comment: CommentCreate, user_name: str):
-    new_comment = Comments(blog_id=comment.blog_id,
-                               content=comment.content,
-                               users=user_name)
+
+def is_admin(db: Session, admin: AdminUser):
+    verify_user = db.execute(select(AdminUser).where(AdminUser.id == admin.id)).scalar_one_or_none()
+    if not verify_user:
+        raise HTTPException (status_code=status.HTTP_403_FORBIDDEN,
+                             detail="Not authorized to perform requested action")
+    return verify_user
+
+
+def create_comment(db: Session, blog_id: int, comment: CommentCreate):
+    new_comment = Comment(
+        blog_id=blog_id,
+        user_id=comment.user_id,
+        content=comment.content,
+        parent_id=getattr(comment, 'parent_id', None),
+    )
     db.add(new_comment)
     db.commit()
     db.refresh(new_comment)
     return new_comment
 
-#def create_like(db: Session, like: LikeCreate):
+def get_comments_by_blog(db: Session, blog_id: int):
+    return db.execute(select(Comment).where(Comment.blog_id == blog_id).order_by(Comment.created_at)).scalars().all()
+
+
+def build_comment_tree(comments: list[Comment]):
+    nodes: dict[int, dict] = {}
+    roots: list[dict] = []
+
+    for c in comments:
+        nodes[c.id] = {
+            'id': c.id,
+            'parent_id': c.parent_id,
+            'blog_id': c.blog_id,
+            'user_id': c.user_id,
+            'content': c.content,
+            'created_at': c.created_at.isoformat() if hasattr(c.created_at, 'isoformat') else c.created_at,
+            'children': []
+        }
+
+    for node in nodes.values():
+        parent_id = node['parent_id']
+        if parent_id and parent_id in nodes:
+            nodes[parent_id]['children'].append(node)
+        else:
+            roots.append(node)
+
+    return roots
+
+
+def create_like(db: Session, like: LikePost, blog_id: int | None = None, comment_id: int | None = None):
+    like_on = Like(user_id=like.user_id,
+                   blog_id=blog_id,
+                   comment_id=comment_id)
+    db.add(like_on)
+    db.commit()
+    db.refresh(like_on)
+    return like_on

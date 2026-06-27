@@ -1,134 +1,164 @@
-from typing import List, Optional
-from pydantic import BaseModel, EmailStr
+from fastapi import Form
+from pydantic import BaseModel, ConfigDict, Field, EmailStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from datetime import datetime
 from .models import BlogStatus
 
 
 class AdminUserCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
     username: str
+    email_address: EmailStr
     password: str
 
-    class Config: 
-        orm_mode = True
+
+class AdminSchema(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
+    id: int
+
 
 class AdminUserRead(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
     id: int
     username: str
     is_superuser: bool
 
+
 class UserSchema(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
+    id: int
     username: str
-    password: str
     disabled: bool | None = None
 
-    class Config: 
-        orm_mode = True
 
 class UserCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
     username: str
     password: str 
 
-    class Config:
-        orm_mode = True
 
 class UserRead(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
     id: int
     username: str 
 
-    class Config: 
-        orm_mode = True
 
 class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 class TokenData(BaseModel):
     username: str
 
-    class Config:
-        orm_mode = True
 
 class AuthorBase(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
     id: int
     username: str
     email_address: EmailStr
     
-    class Config: 
-        orm_mode = True
 
 class AuthorCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
     username: str
     email_address: EmailStr
     password: str
 
-    class Config: 
-        orm_mode = True
-
-class AuthorRead(BaseModel):
-    id: int
-    username: str
-    email_address: EmailStr
 
 class BlogCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
     title: str
     content: str
-    status: BlogStatus
+    status: BlogStatus = BlogStatus.PENDING
 
-    class Config: 
-        orm_mode = True
         
 class BlogPost(BlogCreate):
+    model_config = ConfigDict(extra='ignore')
+    
     id: int
     author_id: int
     created_at: datetime
     content: str
     status: BlogStatus
     
-    class Config: 
-        orm_mode = True
 
 class BlogUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
 
-    class Config:
-        orm_mode = True
 
 class CommentCreate(BaseModel):
-    blog_id: int
-    content: str
-    
-    class Config: 
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: int
+    parent_id: int | None = None
+    content: str = Form(...)
+
 
 class CommentRead(BaseModel):   
+    model_config = ConfigDict(extra='ignore')
+
     id: int
+    parent_id: int | None = None
+    blog_id: int
+    user_id: int
     content: str
-    users: List[UserRead] = []
     created_at: datetime
+    children: list | None = None
 
-    class Config:
-        orm_mode = True
 
-class BlogRead(BaseModel):
+class UserReadBlog(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
     id: int
     title: str
     content: str
+    author: AuthorBase
+
+
+class BlogInfoSchema(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
+    title: str
+    content: str 
+
+
+class LikePost(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
+    user_id: int
+
+
+class PaginatedBlogsResponse(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     
-    class Config:
-        orm_mode = True
+    blogs: list[UserReadBlog]
+    total: int
+    skip: int
+    limit: int
+    has_more: bool
 
-class LikeCreate(BaseModel):
-    user_id: int
-    blog_id: Optional[int] = None
-    comment_id: Optional[int] = None
 
-class ReadLikes(BaseModel):
+class BlogResponse(BlogInfoSchema):
+    model_config = ConfigDict(extra='ignore')
+
     id: int
-    user_id: int
-    user_name: str
-    blog_id: Optional[int] = None
-    comment_id: Optional[int] = None
-
-    class Config:
-        orm_mode = True
+    author_id: int
+    date_posted: datetime
+    author: AuthorBase
 
 
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict()
+
+    secret_key: str = Field('SECRET_KEY')
+    posts_per_page: int = 10
