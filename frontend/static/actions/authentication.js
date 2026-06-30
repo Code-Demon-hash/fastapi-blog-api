@@ -2,16 +2,16 @@ import { config } from '../js/config.js';
 
 
 const signupEndpoint = {
-   admin:  `${CONFIG.API_BASE_URL}/admin/`,
-   author: `${CONFIG.API_BASE_URL}/author/signup`,
-   user: `${CONFIG.API_BASE_URL}/user/create_account`
+   admin:  `${config.API_BASE_URL}/admin/`,
+   author: `${config.API_BASE_URL}/author/signup`,
+   user: `${config.API_BASE_URL}/user/create_account`
 };
 
 
 const loginEndpoints = {
-    admin: `${CONFIG.API_BASE_URL}/admin/login`,
-    author: `${CONFIG.API_BASE_URL}/author/login`,
-    user: `${CONFIG.API_BASE_URL}/user/token`
+    admin: `${config.API_BASE_URL}/admin/login`,
+    author: `${config.API_BASE_URL}/author/login`,
+    user: `${config.API_BASE_URL}/user/token`
 };
 
 export const signup = async (user, role) => {
@@ -62,7 +62,7 @@ export const getCurrentAuthor = async (token) => {
     }
 
     try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/blog/author/me`, {
+        const response = await fetch(`${config.API_BASE_URL}/blog/author/me`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
@@ -88,7 +88,7 @@ export const getCurrentAdmin = async (token) => {
     }
 
     try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/admin/me`, {
+        const response = await fetch(`${config.API_BASE_URL}/admin/me`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -108,6 +108,31 @@ export const getCurrentAdmin = async (token) => {
     }
 };
 
+export const getCurrenUser = async (token) => {
+    if (!token) {
+        return null;
+    }
+
+    try {
+        const response = await fetch(`${config.API_BASE_URL}/user/me`, {
+            headers :{
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        const currentUser = await response.json();
+        
+        return currentUser;
+
+    } catch (error) {
+        console.error("Failed to verify user:", error);
+        return null;
+    }
+};
 
 export const setLocalStorage = (key, value) => {
     localStorage.setItem(key, JSON.stringify(value));
