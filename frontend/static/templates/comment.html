@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en-US">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, intitial-scale=1.0">
+        <title>FastAPI Blog</title>  
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="/static/css/main.css">
+    </head>
+<body>
+    <section class="comments" id="comment-root">
+        <div class="comments-heade">
+            <h2 class="comments-title">Comments</h2>
+        </div>
+        <div class="comment-list" id="classList">
+            <div class="comment-list-loading">Loading comments...</div>
+        </div>
+        <div class="composer" id="composer">
+            <div class="composer-avatar" id="composerAvatar"></div>
+            <div class="composer-field">
+                <textarea
+                    id="composerInput"
+                    class="composer-input"
+                    placeholder="Add a comment for"
+                    rows="1"
+                    maxlength="2000">
+                </textarea>
+                <button class="send-btn" id="sendBtn" type="button">&#8593
+                </button>
+            </div>
+        </div> 
+
+        <div class="composer-locked hidden" id="composerLocked">
+            <p><a href="./login.html">Log in</a> to join the conversation.</p>
+        </div>
+
+    </section>
+    <div class="toast" id="tost"></div>
+    
+    <script type="module" src=""></script>
+</body>
+</html>
